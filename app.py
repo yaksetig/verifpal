@@ -10,7 +10,7 @@ HTML_TEMPLATE = '''
 <!DOCTYPE html>
 <html>
 <head>
-    <title>🔍 Circomspect Web Interface</title>
+    <title>🔍 verifpalspect Web Interface</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -196,8 +196,8 @@ HTML_TEMPLATE = '''
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔍 Circomspect Web Interface</h1>
-            <p>Security analysis for Circom circuits using circomspect</p>
+            <h1>🔍 verifpalspect Web Interface</h1>
+            <p>Security analysis for cryptographic protocols using Verifpal</p>
         </div>
         
         <div class="content">
@@ -215,11 +215,11 @@ HTML_TEMPLATE = '''
                 
                 <textarea 
                     id="codeArea" 
-                    placeholder="Or paste your Circom code here..."
+                    placeholder="Or paste your Verifpal code here..."
                 ></textarea>
                 
                 <button type="submit" class="btn" id="auditBtn">
-                    🔍 Run Circomspect Analysis
+                    🔍 Run verifpal Analysis
                 </button>
             </form>
             
@@ -227,7 +227,7 @@ HTML_TEMPLATE = '''
         </div>
         
         <div class="footer">
-            <p>Powered by <a href="https://github.com/trailofbits/circomspect" target="_blank">circomspect</a></p>
+            <p>Powered by <a href="https://github.com/trailofbits/verifpal" target="_blank">verifpal</a></p>
         </div>
     </div>
 
@@ -292,16 +292,16 @@ HTML_TEMPLATE = '''
             const code = codeArea.value.trim();
             
             if (!code) {
-                alert('Please provide Circom code to analyze');
+                alert('Please provide Verifpal code to analyze');
                 return;
             }
 
             auditBtn.disabled = true;
-            auditBtn.innerHTML = '⏳ Running circomspect...';
+            auditBtn.innerHTML = '⏳ Running verifpal...';
             
             results.innerHTML = `
                 <div class="result loading">
-                    <h3>🔄 Running Circomspect Analysis...</h3>
+                    <h3>🔄 Running verifpal Analysis...</h3>
                     <p>Please wait while we analyze your circuit</p>
                 </div>
             `;
@@ -325,7 +325,7 @@ HTML_TEMPLATE = '''
                 `;
             } finally {
                 auditBtn.disabled = false;
-                auditBtn.innerHTML = '🔍 Run Circomspect Analysis';
+                auditBtn.innerHTML = '🔍 Run verifpal Analysis';
             }
         });
         
@@ -340,7 +340,7 @@ HTML_TEMPLATE = '''
                 return;
             }
             
-            // Display the raw circomspect output
+            // Display the raw verifpal output
             if (result.output) {
                 const hasIssues = result.output.includes('warning:') || 
                                  result.output.includes('error:') || 
@@ -349,14 +349,14 @@ HTML_TEMPLATE = '''
                 results.innerHTML = `
                     <div class="result ${hasIssues ? 'warning' : 'success'}">
                         <h3>${hasIssues ? '📋 Analysis Results' : '✅ No Issues Found'}</h3>
-                        ${hasIssues ? '<pre>' + result.output + '</pre>' : '<p>Circomspect found no issues in your circuit!</p>'}
+                        ${hasIssues ? '<pre>' + result.output + '</pre>' : '<p>verifpal found no issues in your circuit!</p>'}
                     </div>
                 `;
             } else {
                 results.innerHTML = `
                     <div class="result success">
                         <h3>✅ Analysis Complete</h3>
-                        <p>Circomspect analysis completed successfully. No issues found.</p>
+                        <p>verifpal analysis completed successfully. No issues found.</p>
                     </div>
                 `;
             }
@@ -410,7 +410,7 @@ def audit():
     except FileNotFoundError:
         return jsonify({
             'success': False,
-            'error': 'circomspect not found. Please ensure circomspect is installed and in PATH.'
+            'error': 'verifpal not found. Please ensure verifpal is installed and in PATH.'
         })
     except Exception as e:
         return jsonify({

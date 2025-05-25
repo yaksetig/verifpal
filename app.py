@@ -436,9 +436,30 @@ def analyze():
             temp_file = f.name
         
         try:
+            # Try different paths for verifpal
+            verifpal_paths = [
+                'verifpal',
+                '/usr/local/bin/verifpal',
+                '/usr/bin/verifpal'
+            ]
+            
+            verifpal_cmd = None
+            for path in verifpal_paths:
+                if os.path.isfile(path) and os.access(path, os.X_OK):
+                    verifpal_cmd = path
+                    break
+            
+            if not verifpal_cmd:
+                # Try to find it in PATH
+                import shutil
+                verifpal_cmd = shutil.which('verifpal')
+            
+            if not verifpal_cmd:
+                raise FileNotFoundError("Verifpal executable not found")
+            
             # Run verifpal verify command
             result = subprocess.run(
-                ['verifpal', 'verify', temp_file],
+                [verifpal_cmd, 'verify', temp_file],
                 capture_output=True,
                 text=True,
                 timeout=30

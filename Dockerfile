@@ -1,7 +1,4 @@
-FROM golang:1.21-slim AS builder
-
-# Install git
-RUN apt-get update && apt-get install -y git
+FROM golang:1.21 AS builder
 
 # Clone and build Verifpal
 RUN git clone https://github.com/symbolicsoft/verifpal.git /verifpal

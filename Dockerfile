@@ -1,4 +1,4 @@
-FROM golang:1.21 AS builder
+FROM golang:1.22 AS builder
 
 # Clone and build Verifpal
 RUN git clone https://github.com/symbolicsoft/verifpal.git /verifpal

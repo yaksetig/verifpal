@@ -382,13 +382,13 @@ def audit():
             temp_file = f.name
         
         try:
-            # Run circomspect
-            result = subprocess.run(
-                ['circomspect', temp_file],
+            # Run verifpal
+            result = subprocess.run(['verifpal', 'verify', temp_file], 
                 capture_output=True,
                 text=True,
                 timeout=30
             )
+
             
             # Return the output
             return jsonify({

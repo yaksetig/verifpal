@@ -203,10 +203,10 @@ HTML_TEMPLATE = '''
         <div class="content">
             <form id="uploadForm">
                 <div class="upload-area" id="uploadArea">
-                    <input type="file" id="fileInput" accept=".circom" style="display: none;">
+                    <input type="file" id="fileInput" accept=".vp" style="display: none;">
                     <div class="upload-icon">📁</div>
                     <div>
-                        <strong>Click to upload .circom file</strong><br>
+                        <strong>Click to upload .vp file</strong><br>
                         <small style="color: #7f8c8d;">or drag & drop here</small>
                     </div>
                 </div>
@@ -268,8 +268,8 @@ HTML_TEMPLATE = '''
         });
 
         function handleFile(file) {
-            if (!file.name.endsWith('.circom')) {
-                alert('Please upload a .circom file');
+            if (!file.name.endsWith('.vp')) {
+                alert('Please upload a .vp file');
                 return;
             }
             
@@ -377,7 +377,7 @@ def audit():
         circom_code = data['code']
         
         # Create a temporary file for the circom code
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.circom', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.vp', delete=False) as f:
             f.write(circom_code)
             temp_file = f.name
         

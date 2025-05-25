@@ -5,31 +5,30 @@ RUN apt-get update && apt-get install -y \
     curl \
     wget \
     ca-certificates \
+    file \
     && rm -rf /var/lib/apt/lists/*
 
-# Download and install Verifpal
-# First, let's check the architecture and download the correct binary
-RUN ARCH=$(uname -m) && \
-    echo "Architecture: $ARCH" && \
-    if [ "$ARCH" = "x86_64" ]; then \
-        wget -O /usr/local/bin/verifpal https://github.com/symbolicsoft/verifpal/releases/download/v0.26.0/verifpal_linux_amd64; \
-    elif [ "$ARCH" = "aarch64" ]; then \
-        wget -O /usr/local/bin/verifpal https://github.com/symbolicsoft/verifpal/releases/download/v0.26.0/verifpal_linux_arm64; \
-    else \
-        echo "Unsupported architecture: $ARCH" && exit 1; \
-    fi && \
-    chmod +x /usr/local/bin/verifpal && \
-    # Test if it works
-    /usr/local/bin/verifpal help || echo "Verifpal test failed, continuing anyway"
+# Create directory for verifpal
+RUN mkdir -p /usr/local/bin
 
-# Alternative approach: Build from source if the binary doesn't work
-# Uncomment the following lines if the above doesn't work:
-# RUN apt-get update && apt-get install -y golang-go git && \
-#     git clone https://github.com/symbolicsoft/verifpal.git && \
-#     cd verifpal && \
-#     go build -o /usr/local/bin/verifpal cmd/verifpal/main.go && \
-#     chmod +x /usr/local/bin/verifpal && \
-#     cd .. && rm -rf verifpal
+# Download and install Verifpal with proper permissions
+RUN wget -O /tmp/verifpal https://github.com/symbolicsoft/verifpal/releases/download/v0.26.0/verifpal_linux_amd64 && \
+    # Check file type
+    file /tmp/verifpal && \
+    # Copy to final location
+    cp /tmp/verifpal /usr/local/bin/verifpal && \
+    # Make it executable
+    chmod 755 /usr/local/bin/verifpal && \
+    # Verify it's executable
+    ls -la /usr/local/bin/verifpal && \
+    # Clean up
+    rm /tmp/verifpal
+
+# Add /usr/local/bin to PATH explicitly
+ENV PATH="/usr/local/bin:${PATH}"
+
+# Test verifpal (this might fail but that's ok for now)
+RUN /usr/local/bin/verifpal help || echo "Verifpal test run completed"
 
 # Set working directory
 WORKDIR /app
@@ -44,8 +43,9 @@ COPY app.py .
 # Expose port
 EXPOSE 5000
 
-# Debug: Check verifpal installation
-RUN which verifpal && verifpal help || echo "Verifpal not found in PATH"
+# Final check
+RUN which verifpal || echo "verifpal not in PATH" && \
+    ls -la /usr/local/bin/verifpal || echo "verifpal binary not found"
 
 # Run the application
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]

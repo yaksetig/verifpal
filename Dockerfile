@@ -9,12 +9,10 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Rust (required for circomspect)
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-# Install circomspect
-RUN cargo install circomspect
+# Install Verifpal
+RUN curl -L https://github.com/symbolicsoft/verifpal/releases/download/v0.26.0/verifpal_linux_amd64 \
+     -o /usr/local/bin/verifpal \
+    && chmod +x /usr/local/bin/verifpal
 
 # Set working directory
 WORKDIR /app

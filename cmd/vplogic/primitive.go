@@ -11,28 +11,32 @@ import (
 type primitiveEnum uint8
 
 const (
-	primitiveEnumEmpty         primitiveEnum = iota
-	primitiveEnumASSERT        primitiveEnum = iota
-	primitiveEnumCONCAT        primitiveEnum = iota
-	primitiveEnumSPLIT         primitiveEnum = iota
-	primitiveEnumPWHASH        primitiveEnum = iota
-	primitiveEnumHASH          primitiveEnum = iota
-	primitiveEnumHKDF          primitiveEnum = iota
-	primitiveEnumAEADENC       primitiveEnum = iota
-	primitiveEnumAEADDEC       primitiveEnum = iota
-	primitiveEnumENC           primitiveEnum = iota
-	primitiveEnumDEC           primitiveEnum = iota
-	primitiveEnumMAC           primitiveEnum = iota
-	primitiveEnumSIGN          primitiveEnum = iota
-	primitiveEnumSIGNVERIF     primitiveEnum = iota
-	primitiveEnumPKEENC        primitiveEnum = iota
-	primitiveEnumPKEDEC        primitiveEnum = iota
-	primitiveEnumSHAMIRSPLIT   primitiveEnum = iota
-	primitiveEnumSHAMIRJOIN    primitiveEnum = iota
-	primitiveEnumRINGSIGN      primitiveEnum = iota
-	primitiveEnumRINGSIGNVERIF primitiveEnum = iota
-	primitiveEnumBLIND         primitiveEnum = iota
-	primitiveEnumUNBLIND       primitiveEnum = iota
+	primitiveEnumEmpty          primitiveEnum = iota
+	primitiveEnumASSERT         primitiveEnum = iota
+	primitiveEnumCONCAT         primitiveEnum = iota
+	primitiveEnumSPLIT          primitiveEnum = iota
+	primitiveEnumPWHASH         primitiveEnum = iota
+	primitiveEnumHASH           primitiveEnum = iota
+	primitiveEnumHKDF           primitiveEnum = iota
+	primitiveEnumAEADENC        primitiveEnum = iota
+	primitiveEnumAEADDEC        primitiveEnum = iota
+	primitiveEnumENC            primitiveEnum = iota
+	primitiveEnumDEC            primitiveEnum = iota
+	primitiveEnumMAC            primitiveEnum = iota
+	primitiveEnumSIGN           primitiveEnum = iota
+	primitiveEnumSIGNVERIF      primitiveEnum = iota
+	primitiveEnumPKEENC         primitiveEnum = iota
+	primitiveEnumPKEDEC         primitiveEnum = iota
+	primitiveEnumSHAMIRSPLIT    primitiveEnum = iota
+	primitiveEnumSHAMIRJOIN     primitiveEnum = iota
+	primitiveEnumRINGSIGN       primitiveEnum = iota
+	primitiveEnumRINGSIGNVERIF  primitiveEnum = iota
+	primitiveEnumBLIND          primitiveEnum = iota
+	primitiveEnumUNBLIND        primitiveEnum = iota
+	primitiveEnumPEDERSENCOMMIT primitiveEnum = iota
+	primitiveEnumNEG            primitiveEnum = iota
+	primitiveEnumGROUPADD       primitiveEnum = iota
+	primitiveEnumSCALARNEG      primitiveEnum = iota
 )
 
 var primitiveCoreSpecs = []PrimitiveCoreSpec{
@@ -706,6 +710,90 @@ var primitiveSpecs = []PrimitiveSpec{
 				}
 				return x, false
 			},
+		},
+		Rebuild: RebuildRule{
+			HasRule: false,
+		},
+		Check:           false,
+		Explosive:       false,
+		PasswordHashing: []int{},
+	},
+	{
+		ID:     primitiveEnumPEDERSENCOMMIT,
+		Name:   "PEDERSENCOMMIT",
+		Arity:  []int{2},
+		Output: []int{1},
+		Decompose: DecomposeRule{
+			HasRule: false,
+		},
+		Recompose: RecomposeRule{
+			HasRule: false,
+		},
+		Rewrite: RewriteRule{
+			HasRule: false,
+		},
+		Rebuild: RebuildRule{
+			HasRule: false,
+		},
+		Check:           false,
+		Explosive:       false,
+		PasswordHashing: []int{},
+	},
+	{
+		ID:     primitiveEnumNEG,
+		Name:   "NEG",
+		Arity:  []int{1},
+		Output: []int{1},
+		Decompose: DecomposeRule{
+			HasRule: false,
+		},
+		Recompose: RecomposeRule{
+			HasRule: false,
+		},
+		Rewrite: RewriteRule{
+			HasRule: false,
+		},
+		Rebuild: RebuildRule{
+			HasRule: false,
+		},
+		Check:           false,
+		Explosive:       false,
+		PasswordHashing: []int{},
+	},
+	{
+		ID:     primitiveEnumGROUPADD,
+		Name:   "GROUPADD",
+		Arity:  []int{2},
+		Output: []int{1},
+		Decompose: DecomposeRule{
+			HasRule: false,
+		},
+		Recompose: RecomposeRule{
+			HasRule: false,
+		},
+		Rewrite: RewriteRule{
+			HasRule: false,
+		},
+		Rebuild: RebuildRule{
+			HasRule: false,
+		},
+		Check:           false,
+		Explosive:       false,
+		PasswordHashing: []int{},
+	},
+	{
+		ID:     primitiveEnumSCALARNEG,
+		Name:   "SCALARNEG",
+		Arity:  []int{1},
+		Output: []int{1},
+		Decompose: DecomposeRule{
+			HasRule: false,
+		},
+		Recompose: RecomposeRule{
+			HasRule: false,
+		},
+		Rewrite: RewriteRule{
+			HasRule: false,
 		},
 		Rebuild: RebuildRule{
 			HasRule: false,

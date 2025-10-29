@@ -6,6 +6,7 @@ package vplogic
 
 import (
 	"errors"
+	"strings"
 )
 
 var valueG = &Value{
@@ -34,6 +35,19 @@ var valueNil = &Value{
 	},
 }
 
+var valueZero = &Value{
+	Kind: typesEnumConstant,
+	Data: &Constant{
+		Name:        "0",
+		ID:          2,
+		Guard:       false,
+		Fresh:       false,
+		Leaked:      false,
+		Declaration: typesEnumKnows,
+		Qualifier:   typesEnumPublic,
+	},
+}
+
 var valueGNil = &Value{
 	Kind: typesEnumEquation,
 	Data: &Equation{
@@ -51,9 +65,10 @@ var valueGNilNil = &Value{
 var valueNamesMap map[string]valueEnum = map[string]valueEnum{
 	"g":   valueG.Data.(*Constant).ID,
 	"nil": valueNil.Data.(*Constant).ID,
+	"0":   valueZero.Data.(*Constant).ID,
 }
 
-var valueNamesMapCounter valueEnum = 2
+var valueNamesMapCounter valueEnum = 3
 
 func valueNamesMapAdd(name string) valueEnum {
 	id, exists := valueNamesMap[name]
@@ -95,6 +110,11 @@ func valueGetConstantsFromValue(v *Value) []*Constant {
 	c := []*Constant{}
 	switch v.Kind {
 	case typesEnumConstant:
+		name := v.Data.(*Constant).Name
+		if strings.HasPrefix(name, scalarExprPrefix) {
+			c = append(c, scalarExprVariableConstantsFromValue(v)...)
+			break
+		}
 		c = append(c, v.Data.(*Constant))
 	case typesEnumPrimitive:
 		c = append(c, valueGetConstantsFromPrimitive(v.Data.(*Primitive))...)

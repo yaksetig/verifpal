@@ -168,6 +168,16 @@ func possibleToRewrite(
 	p *Primitive, valPrincipalState *PrincipalState,
 ) (bool, []*Value) {
 	v := []*Value{{Kind: typesEnumPrimitive, Data: p}}
+	switch p.ID {
+	case primitiveEnumGROUPADD:
+		return rewriteGroupAddPrimitive(p)
+	case primitiveEnumNEG:
+		return rewriteNegPrimitive(p)
+	case primitiveEnumPEDERSENCOMMIT:
+		return rewritePedersenCommit(p)
+	case primitiveEnumSCALARNEG:
+		return rewriteScalarNegPrimitive(p)
+	}
 	for i, a := range p.Arguments {
 		switch a.Kind {
 		case typesEnumPrimitive:

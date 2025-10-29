@@ -48,6 +48,18 @@ func constructKnowledgeMap(m Model, principals []string, principalIDs []principa
 			map[principalEnum]principalEnum{principalID: principalID},
 		)
 	}
+	valKnowledgeMap.Constants = append(valKnowledgeMap.Constants, valueZero.Data.(*Constant))
+	valKnowledgeMap.Assigned = append(valKnowledgeMap.Assigned, valueZero)
+	valKnowledgeMap.Creator = append(valKnowledgeMap.Creator, principalNamesMap["Attacker"])
+	valKnowledgeMap.KnownBy = append(valKnowledgeMap.KnownBy, []map[principalEnum]principalEnum{})
+	valKnowledgeMap.DeclaredAt = append(valKnowledgeMap.DeclaredAt, declaredAt)
+	valKnowledgeMap.Phase = append(valKnowledgeMap.Phase, []int{currentPhase})
+	for _, principalID := range principalIDs {
+		valKnowledgeMap.KnownBy[2] = append(
+			valKnowledgeMap.KnownBy[2],
+			map[principalEnum]principalEnum{principalID: principalID},
+		)
+	}
 	for _, blck := range m.Blocks {
 		switch blck.Kind {
 		case "principal":

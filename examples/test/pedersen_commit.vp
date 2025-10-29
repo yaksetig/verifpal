@@ -1,0 +1,32 @@
+// SPDX-FileCopyrightText: © 2019-2022 Nadim Kobeissi <nadim@symbolic.software>
+// SPDX-License-Identifier: GPL-3.0-only
+
+attacker[passive]
+
+principal Alice[
+    knows private v
+    knows private r
+    knows private a
+    knows private b
+    knows private c
+    knows private d
+    Commit = PedersenCommit(v, r)
+    CommitNeg = Neg(Commit)
+    DirectNeg = PedersenCommit(-v, -r)
+    S1 = Commit + CommitNeg
+    S2 = PedersenCommit(v, r) + PedersenCommit(-v, -r)
+    Sum = PedersenCommit(a, b) + PedersenCommit(c, d)
+    SumNeg = Neg(Sum)
+    SumPlusNeg = Sum + SumNeg
+    DoubleNeg = Neg(Neg(Commit))
+    ZeroNeg = Neg(0)
+]
+
+queries[
+    equivalence? S1, 0
+    equivalence? S2, 0
+    equivalence? DoubleNeg, Commit
+    equivalence? ZeroNeg, 0
+    equivalence? CommitNeg, DirectNeg
+    equivalence? SumPlusNeg, 0
+]

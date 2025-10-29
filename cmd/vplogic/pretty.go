@@ -31,6 +31,11 @@ func prettyConstant(c *Constant) string {
 	if c.Name == "g" {
 		return "G"
 	}
+	if strings.HasPrefix(c.Name, scalarExprPrefix) {
+		if formatted, ok := formatScalarConstant(c.Name); ok {
+			return formatted
+		}
+	}
 	return c.Name
 }
 
@@ -52,10 +57,12 @@ func prettyPrimitive(p *Primitive) string {
 	pretty := ""
 	if primitiveIsCorePrimitive(p.ID) {
 		prim, _ := primitiveCoreGet(p.ID)
-		pretty = fmt.Sprintf("%s(", prim.Name)
+		name := primitiveDisplayName(p.ID, prim.Name)
+		pretty = fmt.Sprintf("%s(", name)
 	} else {
 		prim, _ := primitiveGet(p.ID)
-		pretty = fmt.Sprintf("%s(", prim.Name)
+		name := primitiveDisplayName(p.ID, prim.Name)
+		pretty = fmt.Sprintf("%s(", name)
 	}
 	check := ""
 	if p.Check {
@@ -73,6 +80,16 @@ func prettyPrimitive(p *Primitive) string {
 	return fmt.Sprintf("%s)%s",
 		pretty, check,
 	)
+}
+
+func primitiveDisplayName(id primitiveEnum, name string) string {
+	switch id {
+	case primitiveEnumPEDERSENCOMMIT:
+		return "PedersenCommit"
+	case primitiveEnumNEG:
+		return "Neg"
+	}
+	return name
 }
 
 func prettyEquation(e *Equation) string {

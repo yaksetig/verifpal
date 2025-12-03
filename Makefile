@@ -48,6 +48,9 @@ dep:
 	@go mod download github.com/josephspurrier/goversioninfo
 	@/bin/echo "       OK"
 
+deep:
+	@$(MAKE) -s dep
+
 update:
 	@go get -u verifpal.com/cmd/verifpal
 
@@ -76,4 +79,4 @@ clean:
 	@$(RM) -r dist
 	@/bin/echo "                   OK"
 
-.PHONY: all windows linux macos freebsd dep lint test release clean HomebrewFormula assets build cmd dist examples internal scripts tools
+.PHONY: all windows linux macos freebsd dep deep lint test release clean HomebrewFormula assets build cmd dist examples internal scripts tools

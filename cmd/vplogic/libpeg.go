@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
@@ -69,13 +70,184 @@ func libpegParseModel(filePath string, verbose bool) (Model, error) {
 			"Parsing model '%s'...", fileName,
 		), "verifpal", false)
 	}
-	parsed, err := ParseFile(filePath)
+	raw, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return Model{}, err
+	}
+	processed, err := preprocessModel(raw)
+	if err != nil {
+		return Model{}, err
+	}
+	parsed, err := Parse(filePath, processed)
 	if err != nil {
 		return Model{}, err
 	}
 	m := parsed.(Model)
 	m.FileName = fileName
 	return m, nil
+}
+
+func preprocessModel(data []byte) ([]byte, error) {
+	lines := strings.Split(string(data), "\n")
+	for i := range lines {
+		processed, err := preprocessLine(lines[i])
+		if err != nil {
+			return nil, err
+		}
+		lines[i] = processed
+	}
+	return []byte(strings.Join(lines, "\n")), nil
+}
+
+func preprocessLine(line string) (string, error) {
+	commentIndex := strings.Index(line, "//")
+	code := line
+	comment := ""
+	if commentIndex >= 0 {
+		code = line[:commentIndex]
+		comment = line[commentIndex:]
+	}
+	code = transformUnaryMinus(code)
+	transformed, err := transformAdditions(code)
+	if err != nil {
+		return "", err
+	}
+	return transformed + comment, nil
+}
+
+func transformUnaryMinus(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	i := 0
+	for i < len(s) {
+		ch := s[i]
+		if ch == '-' {
+			if i+1 < len(s) && s[i+1] == '>' {
+				b.WriteByte('-')
+				i++
+				continue
+			}
+			prev := i - 1
+			for prev >= 0 && unicode.IsSpace(rune(s[prev])) {
+				prev--
+			}
+			unary := prev < 0
+			if !unary {
+				switch s[prev] {
+				case '(', '[', '{', ',', '=', '+':
+					unary = true
+				}
+			}
+			if unary {
+				j := i + 1
+				for j < len(s) && unicode.IsSpace(rune(s[j])) {
+					j++
+				}
+				if j < len(s) && (unicode.IsLetter(rune(s[j])) || s[j] == '_') {
+					start := j
+					for j < len(s) && (unicode.IsLetter(rune(s[j])) || unicode.IsDigit(rune(s[j])) || s[j] == '_') {
+						j++
+					}
+					operand := s[start:j]
+					b.WriteString("SCALARNEG(")
+					b.WriteString(operand)
+					b.WriteByte(')')
+					i = j
+					continue
+				}
+			}
+		}
+		b.WriteByte(ch)
+		i++
+	}
+	return b.String()
+}
+
+func transformAdditions(s string) (string, error) {
+	for {
+		idx := strings.Index(s, "+")
+		if idx < 0 {
+			return s, nil
+		}
+		leftStart, left := extractLeftOperand(s, idx)
+		rightEnd, right := extractRightOperand(s, idx)
+		if strings.TrimSpace(left) == "" || strings.TrimSpace(right) == "" {
+			return "", fmt.Errorf("invalid group addition around '%s'", s)
+		}
+		replacement := fmt.Sprintf("GROUPADD(%s, %s)", strings.TrimSpace(left), strings.TrimSpace(right))
+		s = s[:leftStart] + replacement + s[rightEnd:]
+	}
+}
+
+func extractLeftOperand(s string, plus int) (int, string) {
+	i := plus - 1
+	for i >= 0 && unicode.IsSpace(rune(s[i])) {
+		i--
+	}
+	end := i + 1
+	depth := 0
+	for i >= 0 {
+		ch := rune(s[i])
+		switch ch {
+		case ')', ']', '}':
+			depth++
+		case '(', '[', '{':
+			if depth == 0 {
+				start := i + 1
+				return start, strings.TrimSpace(s[start:end])
+			}
+			depth--
+		case ',', '=', '+':
+			if depth == 0 {
+				start := i + 1
+				return start, strings.TrimSpace(s[start:end])
+			}
+		}
+		if depth == 0 && unicode.IsSpace(ch) {
+			j := i - 1
+			for j >= 0 && unicode.IsSpace(rune(s[j])) {
+				j--
+			}
+			if j < 0 {
+				return 0, strings.TrimSpace(s[:end])
+			}
+			if strings.ContainsRune("(=,[]{}+", rune(s[j])) {
+				start := i + 1
+				return start, strings.TrimSpace(s[start:end])
+			}
+		}
+		i--
+	}
+	return 0, strings.TrimSpace(s[:end])
+}
+
+func extractRightOperand(s string, plus int) (int, string) {
+	i := plus + 1
+	for i < len(s) && unicode.IsSpace(rune(s[i])) {
+		i++
+	}
+	start := i
+	depth := 0
+	for i < len(s) {
+		ch := rune(s[i])
+		switch ch {
+		case '(', '[', '{':
+			depth++
+		case ')', ']', '}':
+			if depth == 0 {
+				end := i
+				return end, strings.TrimSpace(s[start:end])
+			}
+			depth--
+		case ',', '=', '+':
+			if depth == 0 {
+				end := i
+				return end, strings.TrimSpace(s[start:end])
+			}
+		}
+		i++
+	}
+	return len(s), strings.TrimSpace(s[start:])
 }
 
 var g = &grammar{

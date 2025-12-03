@@ -31,6 +31,9 @@ Verifpal comes with a Visual Studio Code extension that offers syntax highlighti
 ## Verifpal is Beta Software
 Verifpal now benefits from a higher level of assurance due to the formalization of its syntax, semantics and analysis methodology, both by hand and using the Coq theorem prover. However, it remains classified as beta software due to its relatively young age, especially when compared to similar tools, such as [ProVerif](https://proverif.inria.fr), that have been in development for more than twenty years.
 
+### Recent Updates
+- Added symbolic PedersenCommit and Neg primitives so commitments behave as group elements, including automatic simplifications such as `PedersenCommit(v, r) + PedersenCommit(-v, -r) = 0`.
+
 ## Getting Started
 
 ### Verifpal User Manual

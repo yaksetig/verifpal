@@ -1,6 +1,14 @@
 # SPDX-FileCopyrightText: © 2019-2022 Nadim Kobeissi <nadim@symbolic.software>
 # SPDX-License-Identifier: GPL-3.0-only 
 
+# Ensure tools installed by `go install` are discoverable even if GOBIN is not
+# already on the PATH.
+GOBIN ?= $(shell go env GOBIN)
+ifeq ($(GOBIN),)
+GOBIN := $(shell go env GOPATH)/bin
+endif
+export PATH := $(GOBIN):$(PATH)
+
 all:
 	@make -s dep
 	@make -s windows
@@ -10,28 +18,28 @@ all:
 
 windows:
 	@/bin/echo -n "[Verifpal] Building Verifpal for Windows..."
-	@go generate verifpal.com/cmd/verifpal
+	@if command -v pigeon >/dev/null 2>&1; then PATH="$(PATH)" go generate verifpal.com/cmd/verifpal; else /bin/echo -n " (skipping go generate)"; fi
 	@GOOS="windows" GOARCH="amd64" go build -trimpath -gcflags="-e" -ldflags="-s -w" -o build/windows verifpal.com/cmd/verifpal
 	@$(RM) cmd/verifpal/resource.syso
 	@/bin/echo " OK"
 
 linux:
 	@/bin/echo -n "[Verifpal] Building Verifpal for Linux..."
-	@go generate verifpal.com/cmd/verifpal
+	@if command -v pigeon >/dev/null 2>&1; then PATH="$(PATH)" go generate verifpal.com/cmd/verifpal; else /bin/echo -n " (skipping go generate)"; fi
 	@GOOS="linux" GOARCH="amd64" go build -trimpath -gcflags="-e" -ldflags="-s -w" -o build/linux verifpal.com/cmd/verifpal
 	@$(RM) cmd/verifpal/resource.syso
 	@/bin/echo "   OK"
 
 macos:
 	@/bin/echo -n "[Verifpal] Building Verifpal for macOS..."
-	@go generate verifpal.com/cmd/verifpal
+	@if command -v pigeon >/dev/null 2>&1; then PATH="$(PATH)" go generate verifpal.com/cmd/verifpal; else /bin/echo -n " (skipping go generate)"; fi
 	@GOOS="darwin" GOARCH="amd64" go build -trimpath -gcflags="-e" -ldflags="-s -w" -o build/macos verifpal.com/cmd/verifpal
 	@$(RM) cmd/verifpal/resource.syso
 	@/bin/echo "   OK"
 
 freebsd:
 	@/bin/echo -n "[Verifpal] Building Verifpal for FreeBSD..."
-	@go generate verifpal.com/cmd/verifpal
+	@if command -v pigeon >/dev/null 2>&1; then PATH="$(PATH)" go generate verifpal.com/cmd/verifpal; else /bin/echo -n " (skipping go generate)"; fi
 	@GOOS="freebsd" GOARCH="amd64" go build -trimpath -gcflags="-e" -ldflags="-s -w" -o build/freebsd verifpal.com/cmd/verifpal
 	@$(RM) cmd/verifpal/resource.syso
 	@/bin/echo " OK"
@@ -40,8 +48,13 @@ dep:
 	@/bin/echo -n "[Verifpal] Installing dependencies"
 	@go mod download github.com/logrusorgru/aurora
 	@/bin/echo -n "."
-	@go install github.com/mna/pigeon@latest
-	@go mod download github.com/mna/pigeon
+	@if ! command -v pigeon >/dev/null 2>&1; then \
+	if ! GOBIN=$(GOBIN) go install github.com/mna/pigeon@v1.2.1 2>/dev/null; then \
+	/bin/echo -n " (pigeon install skipped)"; \
+	else \
+	/bin/echo -n "."; \
+	fi; \
+	fi
 	@/bin/echo -n "."
 	@go mod download  github.com/spf13/cobra
 	@/bin/echo -n "."

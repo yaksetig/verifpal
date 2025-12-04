@@ -55,3 +55,48 @@ Run the model with:
 ./build/verifpal verify examples/pedersen_commit_demo.vp
 ```
 Successful verification confirms that the commitment arithmetic simplifies correctly and that `v` is kept secret in the passive attacker model.
+
+## Example: Zero-Knowledge Proof Primitives
+The `ZKSETUP`, `ZKPROVE`, and `ZKVERIFY` primitives let you model abstract zero-knowledge protocols:
+- `ZKSETUP(seed)` creates reusable public parameters from a seed.
+- `ZKPROVE(params, statement, witness)` produces a proof that the `witness` satisfies the given `statement` under the published
+  `params`.
+- `ZKVERIFY(params, statement, proof)` acts like an assertion: it succeeds only when the proof was produced for the same
+  parameters *and* statement, and otherwise fails immediately without needing a follow-up equality check.
+
+File: `examples/zkproof_demo.vp`
+```verifpal
+attacker[active]
+
+principal Setup[
+    generates setup_seed
+    Params = ZKSETUP(setup_seed)
+]
+
+Setup -> Alice: Params
+Setup -> Bob: Params
+
+principal Alice[
+    knows private secret
+    Statement = HASH(secret)
+    Proof = ZKPROVE(Params, Statement, secret)
+]
+
+Alice -> Bob: Statement, Proof
+
+principal Bob[
+    # Acts as a guard: verification fails here if the proof was forged or mismatched.
+    ZKVERIFY(Params, Statement, Proof)
+]
+
+queries[
+    confidentiality? secret
+]
+```
+
+Run the model with:
+```sh
+./build/verifpal verify examples/zkproof_demo.vp
+```
+Verification succeeds when the proof and statement match, enforcing the assertion at Bob’s verification step while keeping
+the witness `secret` confidential.

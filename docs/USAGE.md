@@ -57,11 +57,11 @@ Run the model with:
 Successful verification confirms that the commitment arithmetic simplifies correctly and that `v` is kept secret in the passive attacker model.
 
 ## Example: Zero-Knowledge Proof Primitives
-The `ZKSETUP`, `ZKPROVE`, and `ZKVERIFY` primitives let you model abstract zero-knowledge protocols:
-- `ZKSETUP(seed)` creates reusable public parameters from a seed.
-- `ZKPROVE(params, statement, witness)` produces a proof that the `witness` satisfies the given `statement` under the published
+The `ZK_SETUP`, `ZK_PROVE`, and `ZK_VERIFY` primitives let you model abstract zero-knowledge protocols:
+- `ZK_SETUP(seed)` creates reusable public parameters from a seed.
+- `ZK_PROVE(params, statement, witness)` produces a proof that the `witness` satisfies the given `statement` under the published
   `params`.
-- `ZKVERIFY(params, statement, proof)` acts like an assertion: it succeeds only when the proof was produced for the same
+- `ZK_VERIFY(params, statement, proof)` acts like an assertion: it succeeds only when the proof was produced for the same
   parameters *and* statement, and otherwise fails immediately without needing a follow-up equality check.
 
 File: `examples/zkproof_demo.vp`
@@ -70,7 +70,7 @@ attacker[active]
 
 principal Setup[
     generates setup_seed
-    Params = ZKSETUP(setup_seed)
+    Params = ZK_SETUP(setup_seed)
 ]
 
 Setup -> Alice: Params
@@ -79,14 +79,14 @@ Setup -> Bob: Params
 principal Alice[
     knows private secret
     Statement = HASH(secret)
-    Proof = ZKPROVE(Params, Statement, secret)
+    Proof = ZK_PROVE(Params, Statement, secret)
 ]
 
 Alice -> Bob: Statement, Proof
 
 principal Bob[
     # Acts as a guard: verification fails here if the proof was forged or mismatched.
-    ZKVERIFY(Params, Statement, Proof)
+    ZK_VERIFY(Params, Statement, Proof)
 ]
 
 queries[

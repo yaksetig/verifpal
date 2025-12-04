@@ -33,7 +33,7 @@ Verifpal now benefits from a higher level of assurance due to the formalization 
 
 ### Recent Updates
 - Added symbolic PedersenCommit and Neg primitives so commitments behave as group elements, including automatic simplifications such as `GROUPADD(PedersenCommit(v, r), PedersenCommit(SCALARNEG(v), SCALARNEG(r))) = 0`.
-- Added zero-knowledge proof primitives (`ZKSETUP`, `ZKPROVE`, `ZKVERIFY`) with an example model in `examples/zkproof_demo.vp`.
+- Added zero-knowledge proof primitives (`ZK_SETUP`, `ZK_PROVE`, `ZK_VERIFY`) with an example model in `examples/zkproof_demo.vp`.
 
 ## Getting Started
 

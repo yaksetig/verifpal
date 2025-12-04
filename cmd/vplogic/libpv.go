@@ -150,11 +150,11 @@ var libpv = PvTemplate{
 			"\tUNBLIND(k, m, SIGN(a, BLIND(k, m))) = SIGN(a, m)",
 			"\totherwise forall k:bitstring, m:bitstring, a:bitstring;",
 			"\tUNBLIND(k, m, a) = const_nil.",
-			"fun ZKSETUP(bitstring):bitstring.",
-			"fun ZKPROVE(bitstring, bitstring, bitstring):bitstring.",
-			"fun ZKVERIFY(bitstring, bitstring, bitstring):bitstring reduc",
+			"fun ZK_SETUP(bitstring):bitstring.",
+			"fun ZK_PROVE(bitstring, bitstring, bitstring):bitstring.",
+			"fun ZK_VERIFY(bitstring, bitstring, bitstring):bitstring reduc",
 			"\tforall params:bitstring, stmt:bitstring, wit:bitstring;",
-			"\tZKVERIFY(params, stmt, ZKPROVE(params, stmt, wit)) = empty.",
+			"\tZK_VERIFY(params, stmt, ZK_PROVE(params, stmt, wit)) = empty.",
 		}, "\n") + "\n"
 	},
 	Channels: func(valKnowledgeMap *KnowledgeMap) string {

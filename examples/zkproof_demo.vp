@@ -1,0 +1,28 @@
+// SPDX-FileCopyrightText: © 2019-2022 Nadim Kobeissi <nadim@symbolic.software>
+// SPDX-License-Identifier: GPL-3.0-only
+
+attacker[active]
+
+principal Setup[
+    generates setup_seed
+    Params = ZKSETUP(setup_seed)
+]
+
+Setup -> Alice: Params
+Setup -> Bob: Params
+
+principal Alice[
+    knows private secret
+    Statement = HASH(secret)
+    Proof = ZKPROVE(Params, Statement, secret)
+]
+
+Alice -> Bob: Statement, Proof
+
+principal Bob[
+    ZKVERIFY(Params, Statement, Proof)
+]
+
+queries[
+    confidentiality? secret
+]

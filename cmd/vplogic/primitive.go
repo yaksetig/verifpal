@@ -33,6 +33,9 @@ const (
 	primitiveEnumRINGSIGNVERIF  primitiveEnum = iota
 	primitiveEnumBLIND          primitiveEnum = iota
 	primitiveEnumUNBLIND        primitiveEnum = iota
+	primitiveEnumZKSETUP        primitiveEnum = iota
+	primitiveEnumZKPROVE        primitiveEnum = iota
+	primitiveEnumZKVERIFY       primitiveEnum = iota
 	primitiveEnumPEDERSENCOMMIT primitiveEnum = iota
 	primitiveEnumNEG            primitiveEnum = iota
 	primitiveEnumGROUPADD       primitiveEnum = iota
@@ -715,6 +718,85 @@ var primitiveSpecs = []PrimitiveSpec{
 			HasRule: false,
 		},
 		Check:           false,
+		Explosive:       false,
+		PasswordHashing: []int{},
+	},
+	{
+		ID:     primitiveEnumZKSETUP,
+		Name:   "ZKSETUP",
+		Arity:  []int{1},
+		Output: []int{1},
+		Decompose: DecomposeRule{
+			HasRule: false,
+		},
+		Recompose: RecomposeRule{
+			HasRule: false,
+		},
+		Rewrite: RewriteRule{
+			HasRule: false,
+		},
+		Rebuild: RebuildRule{
+			HasRule: false,
+		},
+		Check:           false,
+		Explosive:       false,
+		PasswordHashing: []int{},
+	},
+	{
+		ID:     primitiveEnumZKPROVE,
+		Name:   "ZKPROVE",
+		Arity:  []int{3},
+		Output: []int{1},
+		Decompose: DecomposeRule{
+			HasRule: false,
+		},
+		Recompose: RecomposeRule{
+			HasRule: false,
+		},
+		Rewrite: RewriteRule{
+			HasRule: false,
+		},
+		Rebuild: RebuildRule{
+			HasRule: false,
+		},
+		Check:           false,
+		Explosive:       false,
+		PasswordHashing: []int{},
+	},
+	{
+		ID:     primitiveEnumZKVERIFY,
+		Name:   "ZKVERIFY",
+		Arity:  []int{3},
+		Output: []int{1},
+		Decompose: DecomposeRule{
+			HasRule: false,
+		},
+		Recompose: RecomposeRule{
+			HasRule: false,
+		},
+		Rewrite: RewriteRule{
+			HasRule: true,
+			ID:      primitiveEnumZKPROVE,
+			From:    2,
+			To: func(p *Primitive) *Value {
+				proof := p.Arguments[2]
+				if proof.Kind == typesEnumPrimitive {
+					return proof.Data.(*Primitive).Arguments[1]
+				}
+				return p.Arguments[1]
+			},
+			Matching: map[int][]int{
+				0: {0},
+				1: {1},
+			},
+			Filter: func(p *Primitive, x *Value, i int) (*Value, bool) {
+				return x, true
+			},
+		},
+		Rebuild: RebuildRule{
+			HasRule: false,
+		},
+		Check:           true,
 		Explosive:       false,
 		PasswordHashing: []int{},
 	},

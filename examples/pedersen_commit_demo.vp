@@ -7,12 +7,12 @@ principal Alice[
     knows private v
     knows private r
     Commit = PedersenCommit(v, r)
-    Cancel = PedersenCommit(v, r) + PedersenCommit(-v, -r)
-    DoubleCancel = Cancel + PedersenCommit(v, r) + PedersenCommit(-v, -r)
+    Cancel = GROUPADD(Commit, Neg(Commit))
+    DoubleCancel = GROUPADD(Cancel, GROUPADD(Commit, Neg(Commit)))
 ]
 
 queries[
     equivalence? Cancel, 0
     equivalence? DoubleCancel, 0
-    secrecy? v
+    confidentiality? v
 ]

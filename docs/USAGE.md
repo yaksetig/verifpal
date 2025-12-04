@@ -29,7 +29,7 @@ After building, run commands using the binary in `build/` (or `verifpal` if inst
 ```
 
 ## Example: Testing `PedersenCommit`
-The model below demonstrates the symbolic `PedersenCommit` and `Neg` primitives. It shows that adding a commitment to its negation simplifies to zero and checks that the committed value remains secret from a passive attacker.
+The model below demonstrates the symbolic `PedersenCommit` and `Neg` primitives. It shows that adding a commitment to its negation simplifies to zero and checks that the committed value remains secret from a passive attacker. Use the `GROUPADD`, `Neg`, and `SCALARNEG` primitives to express group arithmetic; Verifpal's core syntax does not include infix `+` or `-` operators.
 
 File: `examples/pedersen_commit_demo.vp`
 ```verifpal
@@ -39,14 +39,14 @@ principal Alice[
     knows private v
     knows private r
     Commit = PedersenCommit(v, r)
-    Cancel = PedersenCommit(v, r) + PedersenCommit(-v, -r)
-    DoubleCancel = Cancel + PedersenCommit(v, r) + PedersenCommit(-v, -r)
+    Cancel = GROUPADD(Commit, Neg(Commit))
+    DoubleCancel = GROUPADD(Cancel, GROUPADD(Commit, Neg(Commit)))
 ]
 
 queries[
     equivalence? Cancel, 0
     equivalence? DoubleCancel, 0
-    secrecy? v
+    confidentiality? v
 ]
 ```
 

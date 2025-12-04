@@ -33,9 +33,9 @@ const (
 	primitiveEnumRINGSIGNVERIF  primitiveEnum = iota
 	primitiveEnumBLIND          primitiveEnum = iota
 	primitiveEnumUNBLIND        primitiveEnum = iota
-	primitiveEnumZKSETUP        primitiveEnum = iota
-	primitiveEnumZKPROVE        primitiveEnum = iota
-	primitiveEnumZKVERIFY       primitiveEnum = iota
+	primitiveEnumZK_SETUP       primitiveEnum = iota
+	primitiveEnumZK_PROVE       primitiveEnum = iota
+	primitiveEnumZK_VERIFY      primitiveEnum = iota
 	primitiveEnumPEDERSENCOMMIT primitiveEnum = iota
 	primitiveEnumNEG            primitiveEnum = iota
 	primitiveEnumGROUPADD       primitiveEnum = iota
@@ -722,8 +722,8 @@ var primitiveSpecs = []PrimitiveSpec{
 		PasswordHashing: []int{},
 	},
 	{
-		ID:     primitiveEnumZKSETUP,
-		Name:   "ZKSETUP",
+		ID:     primitiveEnumZK_SETUP,
+		Name:   "ZK_SETUP",
 		Arity:  []int{1},
 		Output: []int{1},
 		Decompose: DecomposeRule{
@@ -743,8 +743,8 @@ var primitiveSpecs = []PrimitiveSpec{
 		PasswordHashing: []int{},
 	},
 	{
-		ID:     primitiveEnumZKPROVE,
-		Name:   "ZKPROVE",
+		ID:     primitiveEnumZK_PROVE,
+		Name:   "ZK_PROVE",
 		Arity:  []int{3},
 		Output: []int{1},
 		Decompose: DecomposeRule{
@@ -764,8 +764,8 @@ var primitiveSpecs = []PrimitiveSpec{
 		PasswordHashing: []int{},
 	},
 	{
-		ID:     primitiveEnumZKVERIFY,
-		Name:   "ZKVERIFY",
+		ID:     primitiveEnumZK_VERIFY,
+		Name:   "ZK_VERIFY",
 		Arity:  []int{3},
 		Output: []int{1},
 		Decompose: DecomposeRule{
@@ -776,7 +776,7 @@ var primitiveSpecs = []PrimitiveSpec{
 		},
 		Rewrite: RewriteRule{
 			HasRule: true,
-			ID:      primitiveEnumZKPROVE,
+			ID:      primitiveEnumZK_PROVE,
 			From:    2,
 			To: func(p *Primitive) *Value {
 				proof := p.Arguments[2]

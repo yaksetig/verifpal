@@ -5,7 +5,7 @@ attacker[active]
 
 principal Setup[
     generates setup_seed
-    Params = ZKSETUP(setup_seed)
+    Params = ZK_SETUP(setup_seed)
 ]
 
 Setup -> Alice: Params
@@ -14,13 +14,13 @@ Setup -> Bob: Params
 principal Alice[
     knows private secret
     Statement = HASH(secret)
-    Proof = ZKPROVE(Params, Statement, secret)
+    Proof = ZK_PROVE(Params, Statement, secret)
 ]
 
 Alice -> Bob: Statement, Proof
 
 principal Bob[
-    ZKVERIFY(Params, Statement, Proof)
+    ZK_VERIFY(Params, Statement, Proof)
 ]
 
 queries[

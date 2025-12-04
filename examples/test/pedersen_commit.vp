@@ -12,12 +12,12 @@ principal Alice[
     knows private d
     Commit = PedersenCommit(v, r)
     CommitNeg = Neg(Commit)
-    DirectNeg = PedersenCommit(-v, -r)
-    S1 = Commit + CommitNeg
-    S2 = PedersenCommit(v, r) + PedersenCommit(-v, -r)
-    Sum = PedersenCommit(a, b) + PedersenCommit(c, d)
+    DirectNeg = PedersenCommit(SCALARNEG(v), SCALARNEG(r))
+    S1 = GROUPADD(Commit, CommitNeg)
+    S2 = GROUPADD(PedersenCommit(v, r), DirectNeg)
+    Sum = GROUPADD(PedersenCommit(a, b), PedersenCommit(c, d))
     SumNeg = Neg(Sum)
-    SumPlusNeg = Sum + SumNeg
+    SumPlusNeg = GROUPADD(Sum, SumNeg)
     DoubleNeg = Neg(Neg(Commit))
     ZeroNeg = Neg(0)
 ]

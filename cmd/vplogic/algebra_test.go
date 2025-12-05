@@ -108,3 +108,23 @@ func TestPreprocessLineAddition(t *testing.T) {
 		t.Fatalf("unexpected preprocess result: %s", processed)
 	}
 }
+
+func TestGroupAdditionWithHashScalars(t *testing.T) {
+	value := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "v", ID: valueNamesMapAdd("v")}}
+	salt := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "s", ID: valueNamesMapAdd("s")}}
+	block := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "n_block", ID: valueNamesMapAdd("n_block")}}
+	hash := &Primitive{ID: primitiveEnumHASH, Arguments: []*Value{salt, block}}
+	commit := &Primitive{ID: primitiveEnumPEDERSENCOMMIT, Arguments: []*Value{value, {Kind: typesEnumPrimitive, Data: hash}}}
+	negCommit := &Primitive{
+		ID: primitiveEnumPEDERSENCOMMIT,
+		Arguments: []*Value{
+			{Kind: typesEnumPrimitive, Data: &Primitive{ID: primitiveEnumSCALARNEG, Arguments: []*Value{value}}},
+			{Kind: typesEnumPrimitive, Data: &Primitive{ID: primitiveEnumSCALARNEG, Arguments: []*Value{{Kind: typesEnumPrimitive, Data: hash}}}},
+		},
+	}
+	groupAdd := &Primitive{ID: primitiveEnumGROUPADD, Arguments: []*Value{{Kind: typesEnumPrimitive, Data: commit}, {Kind: typesEnumPrimitive, Data: negCommit}}}
+	rewritten, values := rewriteGroupAddPrimitive(groupAdd)
+	if !rewritten || len(values) != 1 || values[0] != valueZero {
+		t.Fatalf("expected hash-backed pedersen commits to cancel out")
+	}
+}

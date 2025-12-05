@@ -91,9 +91,18 @@ func scalarExprFromValue(v *Value) (scalarExpr, bool) {
 				return scalarExpr{}, false
 			}
 			return expr.negate(), true
+		case primitiveEnumHASH, primitiveEnumPWHASH:
+			return scalarExprFromHashPrimitive(prim)
 		}
 	}
 	return scalarExpr{}, false
+}
+
+func scalarExprFromHashPrimitive(prim *Primitive) (scalarExpr, bool) {
+	name := prettyPrimitive(prim)
+	expr := newScalarExprZero()
+	expr.terms[name] = 1
+	return expr, true
 }
 
 func scalarExprFromConstant(c *Constant) (scalarExpr, bool) {

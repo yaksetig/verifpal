@@ -9,13 +9,18 @@ import (
 	"sync"
 )
 
-func verifyActive(valKnowledgeMap *KnowledgeMap, valPrincipalStates []*PrincipalState) error {
-	InfoMessage("Attacker is configured as active.", "info", false)
+func verifyActive(valKnowledgeMap *KnowledgeMap, valPrincipalStates []*PrincipalState, quantum bool) error {
+	switch {
+	case quantum:
+		InfoMessage("Attacker is configured as quantum (breaks discrete log).", "info", false)
+	default:
+		InfoMessage("Attacker is configured as active.", "info", false)
+	}
 	phase := 0
 	for phase <= valKnowledgeMap.MaxPhase {
 		var stageGroup sync.WaitGroup
 		InfoMessage(fmt.Sprintf("Running at phase %d.", phase), "info", false)
-		attackerStateInit(true)
+		attackerStateInitQuantum(true, quantum)
 		valPrincipalStatePureResolved := constructPrincipalStateClone(valPrincipalStates[0], true)
 		valPrincipalStatePureResolved, err := valueResolveAllPrincipalStateValues(
 			valPrincipalStatePureResolved, attackerStateGetRead(),

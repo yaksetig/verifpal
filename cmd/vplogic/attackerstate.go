@@ -12,15 +12,54 @@ var attackerStateShared AttackerState
 var attackerStateMutex sync.Mutex
 
 func attackerStateInit(active bool) {
+	attackerStateInitQuantum(active, false)
+}
+
+func attackerStateInitQuantum(active bool, quantum bool) {
 	attackerStateMutex.Lock()
 	attackerStateShared = AttackerState{
 		Active:         active,
+		Quantum:        quantum,
 		CurrentPhase:   0,
 		Exhausted:      false,
 		Known:          []*Value{},
 		PrincipalState: []*PrincipalState{},
 	}
 	attackerStateMutex.Unlock()
+}
+
+func attackerStatePutKnownLocked(known *Value, valPrincipalState *PrincipalState) bool {
+	if valueEquivalentValueInValues(known, attackerStateShared.Known) >= 0 {
+		return false
+	}
+	valPrincipalStateClone := constructPrincipalStateClone(valPrincipalState, false)
+	attackerStateShared.Known = append(attackerStateShared.Known, known)
+	attackerStateShared.PrincipalState = append(
+		attackerStateShared.PrincipalState, valPrincipalStateClone,
+	)
+	if attackerStateShared.Quantum {
+		attackerStateQuantumAbsorbLocked(known, valPrincipalState)
+	}
+	return true
+}
+
+func attackerStateQuantumAbsorbLocked(known *Value, valPrincipalState *PrincipalState) {
+	switch known.Kind {
+	case typesEnumEquation:
+		eq := known.Data.(*Equation)
+		if len(eq.Values) >= 2 && valueEquivalentValues(eq.Values[0], valueG, true) {
+			for _, exponent := range eq.Values[1:] {
+				attackerStatePutKnownLocked(exponent, valPrincipalState)
+			}
+		}
+		for _, v := range eq.Values {
+			attackerStateQuantumAbsorbLocked(v, valPrincipalState)
+		}
+	case typesEnumPrimitive:
+		for _, arg := range known.Data.(*Primitive).Arguments {
+			attackerStateQuantumAbsorbLocked(arg, valPrincipalState)
+		}
+	}
 }
 
 func attackerStateAbsorbPhaseValues(valKnowledgeMap *KnowledgeMap, valPrincipalState *PrincipalState) error {
@@ -40,13 +79,7 @@ func attackerStateAbsorbPhaseValues(valKnowledgeMap *KnowledgeMap, valPrincipalS
 			) {
 				continue
 			}
-			if valueEquivalentValueInValues(valPrincipalState.Assigned[i], attackerStateShared.Known) < 0 {
-				valPrincipalStateClone := constructPrincipalStateClone(valPrincipalState, false)
-				attackerStateShared.Known = append(attackerStateShared.Known, valPrincipalState.Assigned[i])
-				attackerStateShared.PrincipalState = append(
-					attackerStateShared.PrincipalState, valPrincipalStateClone,
-				)
-			}
+			attackerStatePutKnownLocked(valPrincipalState.Assigned[i], valPrincipalState)
 		}
 	}
 	for i, c := range valPrincipalState.Constants {
@@ -65,20 +98,8 @@ func attackerStateAbsorbPhaseValues(valKnowledgeMap *KnowledgeMap, valPrincipalS
 		if earliestPhase > attackerStateShared.CurrentPhase {
 			continue
 		}
-		if valueEquivalentValueInValues(cc, attackerStateShared.Known) < 0 {
-			valPrincipalStateClone := constructPrincipalStateClone(valPrincipalState, false)
-			attackerStateShared.Known = append(attackerStateShared.Known, cc)
-			attackerStateShared.PrincipalState = append(
-				attackerStateShared.PrincipalState, valPrincipalStateClone,
-			)
-		}
-		if valueEquivalentValueInValues(a, attackerStateShared.Known) < 0 {
-			valPrincipalStateClone := constructPrincipalStateClone(valPrincipalState, false)
-			attackerStateShared.Known = append(attackerStateShared.Known, a)
-			attackerStateShared.PrincipalState = append(
-				attackerStateShared.PrincipalState, valPrincipalStateClone,
-			)
-		}
+		attackerStatePutKnownLocked(cc, valPrincipalState)
+		attackerStatePutKnownLocked(a, valPrincipalState)
 	}
 	attackerStateMutex.Unlock()
 	return nil
@@ -100,19 +121,9 @@ func attackerStateGetExhausted() bool {
 }
 
 func attackerStatePutWrite(known *Value, valPrincipalState *PrincipalState) bool {
-	written := false
-	if valueEquivalentValueInValues(known, attackerStateShared.Known) < 0 {
-		attackerStateMutex.Lock()
-		if valueEquivalentValueInValues(known, attackerStateShared.Known) < 0 {
-			valPrincipalStateClone := constructPrincipalStateClone(valPrincipalState, false)
-			attackerStateShared.Known = append(attackerStateShared.Known, known)
-			attackerStateShared.PrincipalState = append(
-				attackerStateShared.PrincipalState, valPrincipalStateClone,
-			)
-			written = true
-		}
-		attackerStateMutex.Unlock()
-	}
+	attackerStateMutex.Lock()
+	written := attackerStatePutKnownLocked(known, valPrincipalState)
+	attackerStateMutex.Unlock()
 	return written
 }
 

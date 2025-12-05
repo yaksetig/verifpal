@@ -298,6 +298,7 @@ type PrimitiveSpec struct {
 //     where the corresponding value in Known was learned by the attacker.
 type AttackerState struct {
 	Active         bool
+	Quantum        bool
 	CurrentPhase   int
 	Exhausted      bool
 	Known          []*Value

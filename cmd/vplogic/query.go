@@ -355,7 +355,10 @@ func queryEquivalence(
 	}
 	values := []*Value{}
 	for i := 0; i < len(query.Constants); i++ {
-		a, _ := valueResolveConstant(query.Constants[i], valPrincipalState, false)
+		a, ii := valueResolveConstant(query.Constants[i], valPrincipalState, true)
+		if ii >= 0 && valPrincipalState.Mutated[ii] {
+			a = valPrincipalState.BeforeMutate[ii]
+		}
 		values = append(values, a)
 	}
 	brokenEquivalence := false

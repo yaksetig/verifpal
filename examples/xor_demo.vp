@@ -12,4 +12,7 @@ principal Alice[
 queries[
 
     equivalence? y, b
+
+    confidentiality? a
+    confidentiality? b
 ]

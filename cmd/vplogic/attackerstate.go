@@ -57,8 +57,9 @@ func attackerStateQuantumAbsorbLocked(known *Value, valPrincipalState *Principal
 }
 
 func attackerStateAbsorbPhaseValues(valKnowledgeMap *KnowledgeMap, valPrincipalState *PrincipalState) error {
-	attackerStateMutex.Lock()
-	for i := 0; i < len(valPrincipalState.Constants); i++ {
+        attackerStateMutex.Lock()
+        defer attackerStateMutex.Unlock()
+        for i := 0; i < len(valPrincipalState.Constants); i++ {
 		switch valPrincipalState.Assigned[i].Kind {
 		case typesEnumConstant:
 			if valPrincipalState.Assigned[i].Data.(*Constant).Qualifier != typesEnumPublic {
@@ -95,8 +96,7 @@ func attackerStateAbsorbPhaseValues(valKnowledgeMap *KnowledgeMap, valPrincipalS
 		attackerStatePutKnownLocked(cc, valPrincipalState)
 		attackerStatePutKnownLocked(a, valPrincipalState)
 	}
-	attackerStateMutex.Unlock()
-	return nil
+        return nil
 }
 
 func attackerStateGetRead() AttackerState {

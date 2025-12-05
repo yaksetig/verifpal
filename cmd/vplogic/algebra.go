@@ -91,6 +91,19 @@ func scalarExprFromValue(v *Value) (scalarExpr, bool) {
 				return scalarExpr{}, false
 			}
 			return expr.negate(), true
+		case primitiveEnumSCALARADD:
+			if len(prim.Arguments) < 2 {
+				return scalarExpr{}, false
+			}
+			sum := newScalarExprZero()
+			for _, arg := range flattenScalarAddOperands(prim.Arguments) {
+				expr, ok := scalarExprFromValue(arg)
+				if !ok {
+					return scalarExpr{}, false
+				}
+				sum = sum.add(expr)
+			}
+			return sum, true
 		case primitiveEnumHASH, primitiveEnumPWHASH:
 			return scalarExprFromHashPrimitive(prim)
 		}
@@ -309,6 +322,22 @@ func rewriteScalarNegPrimitive(p *Primitive) (bool, []*Value) {
 	return true, []*Value{scalarExprToValue(expr.negate())}
 }
 
+func rewriteScalarAddPrimitive(p *Primitive) (bool, []*Value) {
+	if len(p.Arguments) < 2 {
+		return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
+	}
+	sum := newScalarExprZero()
+	for _, operand := range flattenScalarAddOperands(p.Arguments) {
+		expr, ok := scalarExprFromValue(operand)
+		if !ok {
+			return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
+		}
+		sum = sum.add(expr)
+	}
+	sum = sum.normalize()
+	return true, []*Value{scalarExprToValue(sum)}
+}
+
 func rewritePedersenCommit(p *Primitive) (bool, []*Value) {
 	if len(p.Arguments) != 2 {
 		return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
@@ -464,6 +493,21 @@ func flattenGroupAddOperands(args []*Value) []*Value {
 			prim := arg.Data.(*Primitive)
 			if prim.ID == primitiveEnumGROUPADD && len(prim.Arguments) == 2 {
 				operands = append(operands, flattenGroupAddOperands(prim.Arguments)...)
+				continue
+			}
+		}
+		operands = append(operands, arg)
+	}
+	return operands
+}
+
+func flattenScalarAddOperands(args []*Value) []*Value {
+	operands := []*Value{}
+	for _, arg := range args {
+		if arg.Kind == typesEnumPrimitive {
+			prim := arg.Data.(*Primitive)
+			if prim.ID == primitiveEnumSCALARADD && len(prim.Arguments) >= 2 {
+				operands = append(operands, flattenScalarAddOperands(prim.Arguments)...)
 				continue
 			}
 		}

@@ -47,6 +47,34 @@ func TestPedersenCommitRewrite(t *testing.T) {
 	}
 }
 
+func TestScalarAddRewriteToZero(t *testing.T) {
+	x := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "sx", ID: valueNamesMapAdd("sx")}}
+	neg := &Primitive{ID: primitiveEnumSCALARNEG, Arguments: []*Value{x}}
+	add := &Primitive{ID: primitiveEnumSCALARADD, Arguments: []*Value{x, {Kind: typesEnumPrimitive, Data: neg}}}
+	rewritten, values := rewriteScalarAddPrimitive(add)
+	if !rewritten || len(values) != 1 || values[0] != valueZero {
+		t.Fatalf("expected scalar addition to cancel to zero")
+	}
+}
+
+func TestScalarAddRewriteWithHashes(t *testing.T) {
+	secret := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "secret", ID: valueNamesMapAdd("secret")}}
+	salt := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "salt", ID: valueNamesMapAdd("salt")}}
+	hash := &Primitive{ID: primitiveEnumHASH, Arguments: []*Value{salt}}
+	add := &Primitive{ID: primitiveEnumSCALARADD, Arguments: []*Value{secret, {Kind: typesEnumPrimitive, Data: hash}}}
+	rewritten, values := rewriteScalarAddPrimitive(add)
+	if !rewritten || len(values) != 1 {
+		t.Fatalf("expected scalar addition rewrite result")
+	}
+	expr, ok := scalarExprFromValue(values[0])
+	if !ok {
+		t.Fatalf("expected scalar expression from rewrite result")
+	}
+	if expr.constant != 0 || len(expr.terms) != 2 {
+		t.Fatalf("expected two scalar terms in addition result")
+	}
+}
+
 func TestGroupAdditionRewritesToZero(t *testing.T) {
 	commit := &Primitive{
 		ID: primitiveEnumPEDERSENCOMMIT,

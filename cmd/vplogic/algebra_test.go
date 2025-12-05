@@ -157,6 +157,33 @@ func TestGroupAdditionWithHashScalars(t *testing.T) {
 	}
 }
 
+func TestGroupAdditionGeneratorExponentials(t *testing.T) {
+	v := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "v", ID: valueNamesMapAdd("v")}}
+	k := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "k", ID: valueNamesMapAdd("k")}}
+	hash := &Primitive{ID: primitiveEnumHASH, Arguments: []*Value{v, k}}
+	gToHash := &Value{Kind: typesEnumEquation, Data: &Equation{Values: []*Value{valueG, {Kind: typesEnumPrimitive, Data: hash}}}}
+	gToK := &Value{Kind: typesEnumEquation, Data: &Equation{Values: []*Value{valueG, k}}}
+	groupAdd := &Primitive{ID: primitiveEnumGROUPADD, Arguments: []*Value{gToHash, gToK}}
+
+	rewritten, values := rewriteGroupAddPrimitive(groupAdd)
+	if !rewritten || len(values) != 1 {
+		t.Fatalf("expected group addition rewrite result")
+	}
+	hashExpr, ok := scalarExprFromValue(gToHash.Data.(*Equation).Values[1])
+	if !ok {
+		t.Fatalf("expected scalar expression from hash exponent")
+	}
+	kExpr, ok := scalarExprFromValue(k)
+	if !ok {
+		t.Fatalf("expected scalar expression from k")
+	}
+	expected := &Value{Kind: typesEnumEquation, Data: &Equation{Values: []*Value{valueG, scalarExprToValue(hashExpr.add(kExpr))}}}
+
+	if !valueEquivalentValues(values[0], expected, true) {
+		t.Fatalf("expected generator exponentials to combine in rewrite")
+	}
+}
+
 func TestXorRewriteCancellation(t *testing.T) {
 	a := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "axor", ID: valueNamesMapAdd("axor")}}
 	b := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "bxor", ID: valueNamesMapAdd("bxor")}}

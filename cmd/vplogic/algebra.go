@@ -430,49 +430,74 @@ func rewriteGroupAddPrimitive(p *Primitive) (bool, []*Value) {
 	operands := flattenGroupAddOperands(p.Arguments)
 	sumV := newScalarExprZero()
 	sumR := newScalarExprZero()
+	allGenerator := true
 	for _, operand := range operands {
 		if valueIsZero(operand) {
 			continue
 		}
-		if operand.Kind != typesEnumPrimitive {
-			return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
-		}
-		prim := operand.Data.(*Primitive)
-		if prim.ID == primitiveEnumNEG {
-			_, rewritten := rewriteNegPrimitive(prim)
-			if len(rewritten) != 1 {
-				return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
+		generatorOnly := false
+		if operand.Kind == typesEnumPrimitive {
+			prim := operand.Data.(*Primitive)
+			if prim.ID == primitiveEnumNEG {
+				_, rewritten := rewriteNegPrimitive(prim)
+				if len(rewritten) != 1 {
+					return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
+				}
+				operand = rewritten[0]
+				if valueIsZero(operand) {
+					continue
+				}
+				if operand.Kind != typesEnumPrimitive {
+					return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
+				}
+				prim = operand.Data.(*Primitive)
 			}
-			operand = rewritten[0]
-			if valueIsZero(operand) {
+			if prim.ID == primitiveEnumPEDERSENCOMMIT {
+				if len(prim.Arguments) != 2 {
+					return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
+				}
+				vExpr, ok := scalarExprFromValue(prim.Arguments[0])
+				if !ok {
+					return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
+				}
+				rExpr, ok := scalarExprFromValue(prim.Arguments[1])
+				if !ok {
+					return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
+				}
+				sumV = sumV.add(vExpr)
+				sumR = sumR.add(rExpr)
+				allGenerator = false
 				continue
 			}
-			if operand.Kind != typesEnumPrimitive {
+		}
+		if operand.Kind == typesEnumEquation {
+			eq := valueFlattenEquation(operand.Data.(*Equation))
+			if len(eq.Values) == 2 && valueEquivalentValues(eq.Values[0], valueG, true) {
+				vExpr, ok := scalarExprFromValue(eq.Values[1])
+				if !ok {
+					return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
+				}
+				sumV = sumV.add(vExpr)
+				generatorOnly = true
+			} else {
 				return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
 			}
-			prim = operand.Data.(*Primitive)
-		}
-		if prim.ID != primitiveEnumPEDERSENCOMMIT {
+		} else if operand.Kind != typesEnumPrimitive {
 			return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
 		}
-		if len(prim.Arguments) != 2 {
-			return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
-		}
-		vExpr, ok := scalarExprFromValue(prim.Arguments[0])
-		if !ok {
-			return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
-		}
-		rExpr, ok := scalarExprFromValue(prim.Arguments[1])
-		if !ok {
-			return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
-		}
-		sumV = sumV.add(vExpr)
-		sumR = sumR.add(rExpr)
+		allGenerator = allGenerator && generatorOnly
 	}
 	sumV = sumV.normalize()
 	sumR = sumR.normalize()
 	if sumV.isZero() && sumR.isZero() {
 		return true, []*Value{valueZero}
+	}
+	if allGenerator && sumR.isZero() {
+		combined := &Value{
+			Kind: typesEnumEquation,
+			Data: &Equation{Values: []*Value{valueG, scalarExprToValue(sumV)}},
+		}
+		return true, []*Value{combined}
 	}
 	combined := &Primitive{
 		ID: primitiveEnumPEDERSENCOMMIT,

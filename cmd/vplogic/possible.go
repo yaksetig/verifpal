@@ -187,12 +187,14 @@ func possibleToRewrite(
 	}
 	if primitiveIsCorePrimitive(p.ID) {
 		prim, _ := primitiveCoreGet(p.ID)
+		p.Check = p.Check || prim.Check
 		if prim.HasRule {
 			return prim.CoreRule(p)
 		}
 		return !prim.Check, v
 	}
 	prim, _ := primitiveGet(p.ID)
+	p.Check = p.Check || prim.Check
 	if !prim.Rewrite.HasRule {
 		return true, v
 	}

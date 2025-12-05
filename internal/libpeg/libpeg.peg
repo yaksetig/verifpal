@@ -105,8 +105,8 @@ Attacker <- "attacker" _ '[' _ Type:AttackerType? _ ']' _ {
 	return Type, nil
 }
 
-AttackerType <- ("active"/"passive") {
-	return string(c.text), nil
+AttackerType <- ("active"/"passive"/"quantum") {
+        return string(c.text), nil
 }
 
 Block <- Comment* Block:(Phase/Principal/Message) _ Comment* {

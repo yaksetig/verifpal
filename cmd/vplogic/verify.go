@@ -44,7 +44,12 @@ func verifyModel(m Model) ([]VerifyResult, string, error) {
 			return []VerifyResult{}, "", err
 		}
 	case "active":
-		err := verifyActive(valKnowledgeMap, valPrincipalStates)
+		err := verifyActive(valKnowledgeMap, valPrincipalStates, false)
+		if err != nil {
+			return []VerifyResult{}, "", err
+		}
+	case "quantum":
+		err := verifyActive(valKnowledgeMap, valPrincipalStates, true)
 		if err != nil {
 			return []VerifyResult{}, "", err
 		}

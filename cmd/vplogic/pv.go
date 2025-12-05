@@ -362,7 +362,11 @@ func pvModel(m Model, valKnowledgeMap *KnowledgeMap) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	pv = pv + libpv.Parameters(m.Attacker)
+	attackerParam := m.Attacker
+	if attackerParam == "quantum" {
+		attackerParam = "active"
+	}
+	pv = pv + libpv.Parameters(attackerParam)
 	pv = pv + libpv.Types()
 	pv = pv + libpv.Constants(valKnowledgeMap, consts)
 	pv = pv + libpv.CorePrims()

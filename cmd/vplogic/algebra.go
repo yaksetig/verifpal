@@ -112,7 +112,7 @@ func scalarExprFromValue(v *Value) (scalarExpr, bool) {
 }
 
 func scalarExprFromHashPrimitive(prim *Primitive) (scalarExpr, bool) {
-	name := prettyPrimitive(prim)
+	name := prettyPrimitiveCanonical(prim)
 	expr := newScalarExprZero()
 	expr.terms[name] = 1
 	return expr, true

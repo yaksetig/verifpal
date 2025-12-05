@@ -184,6 +184,32 @@ func TestGroupAdditionGeneratorExponentials(t *testing.T) {
 	}
 }
 
+func TestHashScalarExprExponentOrderNormalization(t *testing.T) {
+	r := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "r", ID: valueNamesMapAdd("r")}}
+	v := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "v", ID: valueNamesMapAdd("v")}}
+	gToRV := &Value{Kind: typesEnumEquation, Data: &Equation{Values: []*Value{valueG, r, v}}}
+	gToVR := &Value{Kind: typesEnumEquation, Data: &Equation{Values: []*Value{valueG, v, r}}}
+
+	hashRV := &Primitive{ID: primitiveEnumHASH, Arguments: []*Value{gToRV}}
+	hashVR := &Primitive{ID: primitiveEnumHASH, Arguments: []*Value{gToVR}}
+
+	exprRV, ok := scalarExprFromValue(&Value{Kind: typesEnumPrimitive, Data: hashRV})
+	if !ok {
+		t.Fatalf("expected scalar expr from hash with ordered exponent")
+	}
+
+	exprVR, ok := scalarExprFromValue(&Value{Kind: typesEnumPrimitive, Data: hashVR})
+	if !ok {
+		t.Fatalf("expected scalar expr from hash with reversed exponent")
+	}
+
+	namesRV := exprRV.variableNames()
+	namesVR := exprVR.variableNames()
+	if len(namesRV) != 1 || len(namesVR) != 1 || namesRV[0] != namesVR[0] {
+		t.Fatalf("expected hash exponents with commutative scalars to normalize to same name")
+	}
+}
+
 func TestXorRewriteCancellation(t *testing.T) {
 	a := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "axor", ID: valueNamesMapAdd("axor")}}
 	b := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "bxor", ID: valueNamesMapAdd("bxor")}}

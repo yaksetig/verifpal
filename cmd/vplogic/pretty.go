@@ -7,6 +7,7 @@ package vplogic
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -82,6 +83,35 @@ func prettyPrimitive(p *Primitive) string {
 	)
 }
 
+func prettyPrimitiveCanonical(p *Primitive) string {
+	pretty := ""
+	if primitiveIsCorePrimitive(p.ID) {
+		prim, _ := primitiveCoreGet(p.ID)
+		name := primitiveDisplayName(p.ID, prim.Name)
+		pretty = fmt.Sprintf("%s(", name)
+	} else {
+		prim, _ := primitiveGet(p.ID)
+		name := primitiveDisplayName(p.ID, prim.Name)
+		pretty = fmt.Sprintf("%s(", name)
+	}
+	check := ""
+	if p.Check {
+		check = "?"
+	}
+	for i, arg := range p.Arguments {
+		sep := ""
+		if i != (len(p.Arguments) - 1) {
+			sep = ", "
+		}
+		pretty = fmt.Sprintf("%s%s%s",
+			pretty, prettyValueCanonical(arg), sep,
+		)
+	}
+	return fmt.Sprintf("%s)%s",
+		pretty, check,
+	)
+}
+
 func primitiveDisplayName(id primitiveEnum, name string) string {
 	switch id {
 	case primitiveEnumPEDERSENCOMMIT:
@@ -107,6 +137,23 @@ func prettyEquation(e *Equation) string {
 	return pretty
 }
 
+func prettyEquationCanonical(e *Equation) string {
+	flattened := valueFlattenEquation(e)
+	if len(flattened.Values) == 0 {
+		return ""
+	}
+	if len(flattened.Values) == 1 {
+		return prettyValueCanonical(flattened.Values[0])
+	}
+	base := prettyValueCanonical(flattened.Values[0])
+	exponents := make([]string, 0, len(flattened.Values)-1)
+	for _, exp := range flattened.Values[1:] {
+		exponents = append(exponents, prettyValueCanonical(exp))
+	}
+	sort.Strings(exponents)
+	return fmt.Sprintf("%s^%s", base, strings.Join(exponents, "^"))
+}
+
 func prettyValue(a *Value) string {
 	switch a.Kind {
 	case typesEnumConstant:
@@ -115,6 +162,18 @@ func prettyValue(a *Value) string {
 		return prettyPrimitive(a.Data.(*Primitive))
 	case typesEnumEquation:
 		return prettyEquation(a.Data.(*Equation))
+	}
+	return ""
+}
+
+func prettyValueCanonical(a *Value) string {
+	switch a.Kind {
+	case typesEnumConstant:
+		return prettyConstant(a.Data.(*Constant))
+	case typesEnumPrimitive:
+		return prettyPrimitiveCanonical(a.Data.(*Primitive))
+	case typesEnumEquation:
+		return prettyEquationCanonical(a.Data.(*Equation))
 	}
 	return ""
 }

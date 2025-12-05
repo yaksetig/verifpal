@@ -177,6 +177,8 @@ func possibleToRewrite(
 		return rewritePedersenCommit(p)
 	case primitiveEnumSCALARNEG:
 		return rewriteScalarNegPrimitive(p)
+	case primitiveEnumXOR:
+		return rewriteXorPrimitive(p)
 	}
 	for i, a := range p.Arguments {
 		switch a.Kind {

@@ -260,6 +260,56 @@ func valueIsZero(v *Value) bool {
 	return ok && expr.isZero()
 }
 
+func rewriteXorPrimitive(p *Primitive) (bool, []*Value) {
+	if len(p.Arguments) != 2 {
+		return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}
+	}
+	operands := flattenXorOperands(p.Arguments)
+	simplified := []*Value{}
+	for _, operand := range operands {
+		if valueIsZero(operand) {
+			continue
+		}
+		cancelled := false
+		for i, existing := range simplified {
+			if valueEquivalentValues(existing, operand, true) {
+				simplified = append(simplified[:i], simplified[i+1:]...)
+				cancelled = true
+				break
+			}
+		}
+		if !cancelled {
+			simplified = append(simplified, operand)
+		}
+	}
+	if len(simplified) == 0 {
+		return true, []*Value{valueZero}
+	}
+	if len(simplified) == 1 {
+		return true, []*Value{simplified[0]}
+	}
+	current := &Value{Kind: typesEnumPrimitive, Data: &Primitive{ID: primitiveEnumXOR, Arguments: simplified[:2], Output: p.Output, Check: p.Check}}
+	for i := 2; i < len(simplified); i++ {
+		current = &Value{Kind: typesEnumPrimitive, Data: &Primitive{ID: primitiveEnumXOR, Arguments: []*Value{current, simplified[i]}, Output: p.Output, Check: p.Check}}
+	}
+	return true, []*Value{current}
+}
+
+func flattenXorOperands(args []*Value) []*Value {
+	operands := []*Value{}
+	for _, arg := range args {
+		if arg.Kind == typesEnumPrimitive {
+			prim := arg.Data.(*Primitive)
+			if prim.ID == primitiveEnumXOR && len(prim.Arguments) == 2 {
+				operands = append(operands, flattenXorOperands(prim.Arguments)...)
+				continue
+			}
+		}
+		operands = append(operands, arg)
+	}
+	return operands
+}
+
 func rewriteScalarNegPrimitive(p *Primitive) (bool, []*Value) {
 	if len(p.Arguments) != 1 {
 		return true, []*Value{{Kind: typesEnumPrimitive, Data: p}}

@@ -128,3 +128,23 @@ func TestGroupAdditionWithHashScalars(t *testing.T) {
 		t.Fatalf("expected hash-backed pedersen commits to cancel out")
 	}
 }
+
+func TestXorRewriteCancellation(t *testing.T) {
+	a := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "a", ID: valueNamesMapAdd("a")}}
+	b := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "b", ID: valueNamesMapAdd("b")}}
+	base := &Primitive{ID: primitiveEnumXOR, Arguments: []*Value{a, b}}
+	nested := &Primitive{ID: primitiveEnumXOR, Arguments: []*Value{{Kind: typesEnumPrimitive, Data: base}, a}}
+	rewritten, values := rewriteXorPrimitive(nested)
+	if !rewritten || len(values) != 1 {
+		t.Fatalf("expected xor rewrite to succeed")
+	}
+	if !valueEquivalentValues(values[0], b, true) {
+		t.Fatalf("expected xor rewrite to cancel operand")
+	}
+
+	duplicate := &Primitive{ID: primitiveEnumXOR, Arguments: []*Value{a, a}}
+	zeroed, values := rewriteXorPrimitive(duplicate)
+	if !zeroed || len(values) != 1 || values[0] != valueZero {
+		t.Fatalf("expected xor of identical operands to reduce to zero")
+	}
+}

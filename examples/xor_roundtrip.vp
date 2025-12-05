@@ -1,0 +1,26 @@
+// SPDX-FileCopyrightText: © 2019-2022 Nadim Kobeissi <nadim@symbolic.software>
+// SPDX-License-Identifier: GPL-3.0-only
+
+attacker[passive]
+
+principal Alice[
+    knows private m
+    knows private k
+    c = XOR(m, k)
+    roundtrip = XOR(c, k)
+    zero = XOR(k, k)
+]
+
+Alice -> Bob: c
+
+principal Bob[
+    knows private k
+    m_recovered = XOR(c, k)
+]
+
+queries[
+    confidentiality? m
+    equivalence? roundtrip, m
+    equivalence? m_recovered, m
+    equivalence? zero, 0
+]

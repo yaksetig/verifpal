@@ -47,7 +47,7 @@ func attackerStateQuantumAbsorbLocked(known *Value, valPrincipalState *Principal
 	if known.Kind != typesEnumEquation {
 		return
 	}
-	eq := known.Data.(*Equation)
+	eq := valueFlattenEquation(known.Data.(*Equation))
 	if len(eq.Values) < 2 || !valueEquivalentValues(eq.Values[0], valueG, true) {
 		return
 	}

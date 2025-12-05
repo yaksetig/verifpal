@@ -5,24 +5,30 @@ attacker[active]
 
 principal Setup[
     generates setup_seed
-    Params = ZK_SETUP(setup_seed)
+    crs = ZK_SETUP(setup_seed)
 ]
 
-Setup -> Alice: Params
-Setup -> Bob: Params
+Setup -> Alice: crs
+Setup -> Bob: crs
 
 principal Alice[
-    knows private secret
-    Statement = HASH(secret)
-    Proof = ZK_PROVE(Params, Statement, secret)
+    generates secret_X
+    generates secret_Y
+    knows public statement
+    
+    witness = CONCAT(secret_X, secret_Y)
+
+    proof = ZK_PROVE(crs, statement, witness)
 ]
 
-Alice -> Bob: Statement, Proof
+Alice -> Bob: proof
 
 principal Bob[
-    ZK_VERIFY(Params, Statement, Proof)
+    knows public statement
+
+    _ = ZK_VERIFY(crs, statement, proof)
 ]
 
 queries[
-    confidentiality? secret
+    confidentiality? secret_X
 ]

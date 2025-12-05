@@ -1,0 +1,239 @@
+attacker[active]
+
+principal Alice[
+]
+
+principal Bob[
+]
+
+principal Blockchain[
+]
+
+principal TrustedSetup[
+    generates setup_params
+    
+    // obtain common reference string (crs)
+    crs = ZK_SETUP(setup_params)
+]
+
+// Pass the CRS to network participants
+TrustedSetup -> Blockchain: crs
+TrustedSetup -> Alice     : crs
+TrustedSetup -> Bob       : crs
+
+
+// Alice generates both key pairs
+principal Alice[
+    generates v_skA
+    generates s_skA
+
+    s_pkA = HASH(s_skA)
+    v_pkA  = G^v_skA
+]
+
+// Alice registers both public keys on the blockchain
+Alice -> Blockchain: [s_pkA], [v_pkA]
+
+// Bob generates both key pairs
+principal Bob[
+    // create view secret key
+    generates v_skB
+
+    // calculate view public key (technically not correct because this is an ML-KEM key, but for the purpose of this analysis we model it like this)
+    v_pkB  = G^v_skB
+
+    // create spend secret key
+    generates s_skB
+
+    // obtain spend public key
+    s_pkB = HASH(s_skB)
+]
+
+// Bob registers both public keys on the blockchain
+Bob -> Blockchain: [s_pkB], [v_pkB]
+
+
+// Alice and Bob both receive keys from the blockchain (which acts as a PKI)
+Blockchain -> Alice: [v_pkB]
+Blockchain -> Bob  : [v_pkA]
+
+// 
+principal Alice[
+    
+    // generate pre-secret
+    generates s
+
+    // encapsulate secret for Bob
+    ctxt = PKE_ENC(v_pkB, s)
+
+    // calculate key fingerprint
+    s_id = HASH(s)
+]
+
+Alice -> Blockchain: [ctxt], [s_id]
+Blockchain -> Bob  : [ctxt], [s_id]
+
+// Bob obtains the shared secret
+principal Bob[
+    
+    // obtain the pre-secret
+    s_ = PKE_DEC(v_skB, ctxt)
+
+    // calculate key fingerprint from the obtained pre-secret
+    s_id_ = HASH(s_)
+
+    // compare the obtained key fingerprint with the one published by Alice
+    _ = ASSERT(s_id, s_id_)
+
+    // sign off on key fingerprint to signal a successful key agreement
+    generates ok_msg
+]
+
+// Bob signs off on the obtained key fingerprint
+Bob -> Blockchain: [ok_msg]
+
+//  Blockchain creates a new block
+principal Blockchain[
+    generates n_block
+    generates block
+]
+
+// Blockchain broadcasts latest block
+Blockchain -> Alice: [n_block]
+Blockchain -> Bob: [n_block]
+
+principal Alice[
+    // context (public) variable for HKDF
+    knows public info
+
+    // ZK statement
+    knows public statement
+
+    // amount to be sent
+    generates v 
+
+    // amount to be received by recipient
+    neg_v = SCALARNEG(v)
+
+    // random factor for this block
+    r = HASH(s, n_block)
+
+    // inverse of random factor
+    neg_r = SCALARNEG(r)
+
+    // nullifier for this block
+    nullifier = HASH(s_skA, n_block)
+
+    // create commitments for transaction
+    commit_a = PedersenCommit(v, r)
+    commit_b = PedersenCommit(neg_v, neg_r)
+
+    // generalization of the witness for the ZK statement
+    witness = CONCAT(s_skA, v, r, n_block)
+
+    // create the ZK proof
+    zk_proof = ZK_PROVE(crs, statement, witness)
+    
+    // calculate private messaging tags
+    tag_a = HASH(r, n_block) // A is the sender so the input is the random factor and the block number
+    tag_b = HASH(s, n_block) // B is the recipient so the input is the shared secret with the sender and the block number
+
+    // obtain salt for this block just by hashing the block number
+    salt = HASH(n_block)
+
+    // derive symmetric key for this block
+    k = HKDF(salt, s, info)
+    
+    // calculate associated data for this transaction
+    associated_data = CONCAT(tag_a, tag_b)
+
+    // message payload
+    msg = CONCAT(neg_v, neg_r)
+
+    // symmetric encryption with associated data
+    ciphertext = AEAD_ENC(k, msg, associated_data)
+]
+
+// Alice publishes the transaction on the blockchain
+Alice -> Blockchain: [commit_a], [commit_b], [tag_a], [tag_b], [nullifier], [zk_proof], [ciphertext]
+
+// Blockchain checks transaction
+principal Blockchain[
+
+    generates zkp
+    
+    // add the received commitments
+    commit_sum = GROUPADD(commit_a, commit_b)
+    commit_zero = PedersenCommit(0, 0)
+    
+    // check if commitments add up to zero
+    _ = ASSERT(commit_zero, commit_sum)
+
+    // check if ZK proof is correct
+    _ = ZK_VERIFY(crs, statement, zk_proof)
+]
+
+// Bob fetches the transaction from the blockchain
+Blockchain -> Bob: [commit_a], [commit_b], [tag_a], [tag_b], [nullifier], [zk_proof], [ciphertext]
+
+
+principal Bob[
+    knows public info
+
+    // calculate private messaging tag
+    tag_b_ = HASH(s_, n_block)
+
+    // derive random factor for latest block
+    r_ = HASH(s_, n_block)
+    
+    // derive salt for latest block
+    salt_ = HASH(n_block)
+
+    // derive symmetric key for latest block
+    k_ = HKDF(salt_, s_, info)
+
+    // obtain associated data payload
+    ad = CONCAT(tag_a, tag_b)
+
+    // decrypt received ciphertext
+    plaintext = AEAD_DEC(k_, ciphertext, ad)
+
+    // obtain transaction amount and random factor
+    tx_v, tx_r = SPLIT(plaintext)
+
+    // calculate Pedersen commitment using obtained values
+    tx_commit = PedersenCommit(tx_v, tx_r)
+
+    // check if obtained value matches tx value
+    _ = ASSERT(tx_commit, commit_b)
+]
+
+
+// Cryptographic Guarantees
+queries[
+    
+    // confidentiality queries
+    confidentiality? s          // check if shared secret between Alice and Bob is not leaked
+    
+    confidentiality? v_skA      // check if (view) secret key of Alice is not leaked
+    confidentiality? s_skA      // check if (spend) secret key of Alice is not leaked
+
+    confidentiality? v_skB      // check if (view) secret key of Bob is leaked
+    confidentiality? s_skB      // check if (spend) secret key of Bob is not leaked
+    
+    confidentiality? r          // make sure that the random factor is not leaked
+    confidentiality? v          // make sure that the transaction amount is not leaked
+
+    confidentiality? witness    // make sure that the witness in the ZK statement is not leaked
+
+    // equivalence queries
+    equivalence? s, s_          // check if different transcripts obtain same shared secret
+    equivalence? s_id, s_id_    // check if different transcripts obtain same fingerprint
+    equivalence? r, r_          // check if Bob obtains same commit as the one received
+    
+    equivalence? tx_v, neg_v    // check if Bob obtains same commit as the one received                                                                                                                           
+    equivalence? tx_r, neg_r    // check if Bob obtains same commit as the one received
+
+    equivalence? commit_sum, commit_zero // check if sum of commits adds up to zero
+    equivalence? tx_commit, commit_b     // check if Bob obtains same commit as the one received
+]

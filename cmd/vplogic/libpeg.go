@@ -26,7 +26,7 @@ import (
 )
 
 var libpegReserved = []string{
-	"attacker", "passive", "active", "principal",
+	"attacker", "passive", "active", "quantum", "principal",
 	"knows", "generates", "leaks",
 	"phase", "public", "private", "password",
 	"confidentiality", "authentication",
@@ -405,6 +405,12 @@ var g = &grammar{
 							val:        "passive",
 							ignoreCase: false,
 							want:       "\"passive\"",
+						},
+						&litMatcher{
+							pos:        position{line: 108, col: 37, offset: 2631},
+							val:        "quantum",
+							ignoreCase: false,
+							want:       "\"quantum\"",
 						},
 					},
 				},

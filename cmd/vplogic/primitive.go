@@ -40,6 +40,7 @@ const (
 	primitiveEnumNEG            primitiveEnum = iota
 	primitiveEnumGROUPADD       primitiveEnum = iota
 	primitiveEnumSCALARNEG      primitiveEnum = iota
+	primitiveEnumSCALARADD      primitiveEnum = iota
 	primitiveEnumXOR            primitiveEnum = iota
 )
 
@@ -877,6 +878,29 @@ var primitiveSpecs = []PrimitiveSpec{
 		},
 		Rewrite: RewriteRule{
 			HasRule: false,
+		},
+		Rebuild: RebuildRule{
+			HasRule: false,
+		},
+		Check:           false,
+		Explosive:       false,
+		PasswordHashing: []int{},
+	},
+	{
+		ID:     primitiveEnumSCALARADD,
+		Name:   "SCALAR_ADD",
+		Arity:  []int{2},
+		Output: []int{1},
+		Decompose: DecomposeRule{
+			HasRule: false,
+		},
+		Recompose: RecomposeRule{
+			HasRule: false,
+		},
+		Rewrite: RewriteRule{
+			HasRule: true,
+			ID:      primitiveEnumSCALARADD,
+			From:    0,
 		},
 		Rebuild: RebuildRule{
 			HasRule: false,

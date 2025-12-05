@@ -25,8 +25,8 @@ func TestPedersenCommitRewrite(t *testing.T) {
 	commit := &Primitive{
 		ID: primitiveEnumPEDERSENCOMMIT,
 		Arguments: []*Value{
-			&Value{Kind: typesEnumConstant, Data: &Constant{Name: "v", ID: valueNamesMapAdd("v")}},
-			&Value{Kind: typesEnumConstant, Data: &Constant{Name: "r", ID: valueNamesMapAdd("r")}},
+			{Kind: typesEnumConstant, Data: &Constant{Name: "v", ID: valueNamesMapAdd("v")}},
+			{Kind: typesEnumConstant, Data: &Constant{Name: "r", ID: valueNamesMapAdd("r")}},
 		},
 	}
 	rewritten, values := rewritePedersenCommit(commit)
@@ -51,8 +51,8 @@ func TestGroupAdditionRewritesToZero(t *testing.T) {
 	commit := &Primitive{
 		ID: primitiveEnumPEDERSENCOMMIT,
 		Arguments: []*Value{
-			&Value{Kind: typesEnumConstant, Data: &Constant{Name: "x", ID: valueNamesMapAdd("x")}},
-			&Value{Kind: typesEnumConstant, Data: &Constant{Name: "y", ID: valueNamesMapAdd("y")}},
+			{Kind: typesEnumConstant, Data: &Constant{Name: "x", ID: valueNamesMapAdd("x")}},
+			{Kind: typesEnumConstant, Data: &Constant{Name: "y", ID: valueNamesMapAdd("y")}},
 		},
 	}
 	negCommit := &Primitive{
@@ -74,8 +74,8 @@ func TestNegDoubleNegation(t *testing.T) {
 	base := &Primitive{
 		ID: primitiveEnumPEDERSENCOMMIT,
 		Arguments: []*Value{
-			&Value{Kind: typesEnumConstant, Data: &Constant{Name: "a", ID: valueNamesMapAdd("a")}},
-			&Value{Kind: typesEnumConstant, Data: &Constant{Name: "b", ID: valueNamesMapAdd("b")}},
+			{Kind: typesEnumConstant, Data: &Constant{Name: "a", ID: valueNamesMapAdd("a")}},
+			{Kind: typesEnumConstant, Data: &Constant{Name: "b", ID: valueNamesMapAdd("b")}},
 		},
 	}
 	neg := &Primitive{ID: primitiveEnumNEG, Arguments: []*Value{{Kind: typesEnumPrimitive, Data: base}}}
@@ -126,5 +126,28 @@ func TestGroupAdditionWithHashScalars(t *testing.T) {
 	rewritten, values := rewriteGroupAddPrimitive(groupAdd)
 	if !rewritten || len(values) != 1 || values[0] != valueZero {
 		t.Fatalf("expected hash-backed pedersen commits to cancel out")
+	}
+}
+
+func TestXorRewriteCancellation(t *testing.T) {
+	a := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "axor", ID: valueNamesMapAdd("axor")}}
+	b := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "bxor", ID: valueNamesMapAdd("bxor")}}
+	inner := &Primitive{ID: primitiveEnumXOR, Arguments: []*Value{a, b}}
+	outer := &Primitive{ID: primitiveEnumXOR, Arguments: []*Value{{Kind: typesEnumPrimitive, Data: inner}, a}}
+	rewritten, values := rewriteXorPrimitive(outer)
+	if !rewritten || len(values) != 1 {
+		t.Fatalf("expected xor rewrite result")
+	}
+	if !valueEquivalentValues(values[0], b, true) {
+		t.Fatalf("expected xor rewrite to return other operand")
+	}
+}
+
+func TestXorRewriteToZero(t *testing.T) {
+	a := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "cxor", ID: valueNamesMapAdd("cxor")}}
+	xor := &Primitive{ID: primitiveEnumXOR, Arguments: []*Value{a, a}}
+	rewritten, values := rewriteXorPrimitive(xor)
+	if !rewritten || len(values) != 1 || values[0] != valueZero {
+		t.Fatalf("expected xor of identical operands to reduce to zero")
 	}
 }

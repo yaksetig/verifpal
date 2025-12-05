@@ -1,0 +1,7 @@
+attacker active
+
+principal Alice[
+    knows A, B
+    X = XOR(A, B)
+    Bcheck = XOR(X, A)
+]

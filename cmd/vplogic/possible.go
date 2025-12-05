@@ -173,6 +173,8 @@ func possibleToRewrite(
 		return rewriteGroupAddPrimitive(p)
 	case primitiveEnumNEG:
 		return rewriteNegPrimitive(p)
+	case primitiveEnumXOR:
+		return rewriteXorPrimitive(p)
 	case primitiveEnumPEDERSENCOMMIT:
 		return rewritePedersenCommit(p)
 	case primitiveEnumSCALARNEG:

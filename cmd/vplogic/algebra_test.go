@@ -47,6 +47,34 @@ func TestPedersenCommitRewrite(t *testing.T) {
 	}
 }
 
+func TestScalarAddRewriteToZero(t *testing.T) {
+	x := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "sx", ID: valueNamesMapAdd("sx")}}
+	neg := &Primitive{ID: primitiveEnumSCALARNEG, Arguments: []*Value{x}}
+	add := &Primitive{ID: primitiveEnumSCALARADD, Arguments: []*Value{x, {Kind: typesEnumPrimitive, Data: neg}}}
+	rewritten, values := rewriteScalarAddPrimitive(add)
+	if !rewritten || len(values) != 1 || values[0] != valueZero {
+		t.Fatalf("expected scalar addition to cancel to zero")
+	}
+}
+
+func TestScalarAddRewriteWithHashes(t *testing.T) {
+	secret := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "secret", ID: valueNamesMapAdd("secret")}}
+	salt := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "salt", ID: valueNamesMapAdd("salt")}}
+	hash := &Primitive{ID: primitiveEnumHASH, Arguments: []*Value{salt}}
+	add := &Primitive{ID: primitiveEnumSCALARADD, Arguments: []*Value{secret, {Kind: typesEnumPrimitive, Data: hash}}}
+	rewritten, values := rewriteScalarAddPrimitive(add)
+	if !rewritten || len(values) != 1 {
+		t.Fatalf("expected scalar addition rewrite result")
+	}
+	expr, ok := scalarExprFromValue(values[0])
+	if !ok {
+		t.Fatalf("expected scalar expression from rewrite result")
+	}
+	if expr.constant != 0 || len(expr.terms) != 2 {
+		t.Fatalf("expected two scalar terms in addition result")
+	}
+}
+
 func TestGroupAdditionRewritesToZero(t *testing.T) {
 	commit := &Primitive{
 		ID: primitiveEnumPEDERSENCOMMIT,
@@ -126,6 +154,33 @@ func TestGroupAdditionWithHashScalars(t *testing.T) {
 	rewritten, values := rewriteGroupAddPrimitive(groupAdd)
 	if !rewritten || len(values) != 1 || values[0] != valueZero {
 		t.Fatalf("expected hash-backed pedersen commits to cancel out")
+	}
+}
+
+func TestGroupAdditionGeneratorExponentials(t *testing.T) {
+	v := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "v", ID: valueNamesMapAdd("v")}}
+	k := &Value{Kind: typesEnumConstant, Data: &Constant{Name: "k", ID: valueNamesMapAdd("k")}}
+	hash := &Primitive{ID: primitiveEnumHASH, Arguments: []*Value{v, k}}
+	gToHash := &Value{Kind: typesEnumEquation, Data: &Equation{Values: []*Value{valueG, {Kind: typesEnumPrimitive, Data: hash}}}}
+	gToK := &Value{Kind: typesEnumEquation, Data: &Equation{Values: []*Value{valueG, k}}}
+	groupAdd := &Primitive{ID: primitiveEnumGROUPADD, Arguments: []*Value{gToHash, gToK}}
+
+	rewritten, values := rewriteGroupAddPrimitive(groupAdd)
+	if !rewritten || len(values) != 1 {
+		t.Fatalf("expected group addition rewrite result")
+	}
+	hashExpr, ok := scalarExprFromValue(gToHash.Data.(*Equation).Values[1])
+	if !ok {
+		t.Fatalf("expected scalar expression from hash exponent")
+	}
+	kExpr, ok := scalarExprFromValue(k)
+	if !ok {
+		t.Fatalf("expected scalar expression from k")
+	}
+	expected := &Value{Kind: typesEnumEquation, Data: &Equation{Values: []*Value{valueG, scalarExprToValue(hashExpr.add(kExpr))}}}
+
+	if !valueEquivalentValues(values[0], expected, true) {
+		t.Fatalf("expected generator exponentials to combine in rewrite")
 	}
 }
 

@@ -40,6 +40,7 @@ const (
 	primitiveEnumNEG            primitiveEnum = iota
 	primitiveEnumGROUPADD       primitiveEnum = iota
 	primitiveEnumSCALARNEG      primitiveEnum = iota
+	primitiveEnumXOR            primitiveEnum = iota
 )
 
 var primitiveCoreSpecs = []PrimitiveCoreSpec{
@@ -867,6 +868,27 @@ var primitiveSpecs = []PrimitiveSpec{
 		ID:     primitiveEnumSCALARNEG,
 		Name:   "SCALARNEG",
 		Arity:  []int{1},
+		Output: []int{1},
+		Decompose: DecomposeRule{
+			HasRule: false,
+		},
+		Recompose: RecomposeRule{
+			HasRule: false,
+		},
+		Rewrite: RewriteRule{
+			HasRule: false,
+		},
+		Rebuild: RebuildRule{
+			HasRule: false,
+		},
+		Check:           false,
+		Explosive:       false,
+		PasswordHashing: []int{},
+	},
+	{
+		ID:     primitiveEnumXOR,
+		Name:   "XOR",
+		Arity:  []int{2, 3, 4, 5},
 		Output: []int{1},
 		Decompose: DecomposeRule{
 			HasRule: false,
